@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <title>Eagle Visual Builder</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Playfair+Display:wght@600;700;900&display=swap" rel="stylesheet">
@@ -86,21 +86,12 @@
 html, body {
   margin: 0;
   height: 100%;
-  min-height: 100%;
-  overflow: auto; /* allow page scroll (needed for Android WebView) */
+  overflow: hidden;
   font-family: var(--font-ui);
   font-size: 13px;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-  -webkit-overflow-scrolling: touch;
-}
-html.vb-scroll, html.vb-scroll body {
-  overflow: auto !important;
-  height: auto !important;
-  min-height: 100% !important;
-  max-height: none !important;
-  -webkit-overflow-scrolling: touch !important;
 }
 
 body { user-select: none; }
@@ -120,14 +111,6 @@ button { cursor: pointer; border: 0; background: none; }
   display: grid;
   grid-template-rows: var(--bar-h) 1fr var(--status-h);
   height: 100vh;
-  min-height: 100vh;
-  max-height: none;
-}
-html.vb-scroll #app {
-  height: auto !important;
-  min-height: 100dvh !important;
-  max-height: none !important;
-  overflow: visible !important;
 }
 
 #mainrow {
@@ -301,19 +284,8 @@ kbd {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-height: 100%;
   background: var(--panel);
   border-right: 1px solid var(--line);
-  overflow: hidden;
-}
-#palette .pal-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: scroll !important;
-  overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
-  overscroll-behavior: contain;
 }
 
 .pal-head { padding: 9px 10px 8px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
@@ -350,16 +322,7 @@ kbd {
 }
 .seg button.is-on { background: var(--panel-3); color: var(--text); }
 
-.pal-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: scroll !important;
-  overflow-x: hidden !important;
-  padding: 6px 0 40px;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
-  overscroll-behavior: contain;
-}
+.pal-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 6px 0 40px; }
 
 .cat {
   display: flex;
@@ -434,11 +397,8 @@ kbd {
 
 #viewport {
   position: relative;
-  overflow: auto !important;
+  overflow: auto;
   min-height: 0;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-x pan-y;
-  overscroll-behavior: contain;
   background:
     radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0) 0 0 / 22px 22px,
     var(--canvas-bg);
@@ -732,19 +692,8 @@ body.is-resizing-artboard-v * { cursor: ns-resize !important; }
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-height: 100%;
   background: var(--panel);
   border-left: 1px solid var(--line);
-  overflow: hidden;
-}
-#inspector .insp-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: scroll !important;
-  overflow-x: hidden !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
-  overscroll-behavior: contain;
 }
 
 .insp-tabs { display: flex; padding: 5px 6px; gap: 2px; border-bottom: 1px solid var(--line); }
@@ -759,16 +708,7 @@ body.is-resizing-artboard-v * { cursor: ns-resize !important; }
 .insp-tab:hover { color: var(--text); }
 .insp-tab.is-on { background: var(--accent-soft); color: var(--accent); }
 
-.insp-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: scroll !important;
-  overflow-x: hidden !important;
-  padding-bottom: 48px;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
-  overscroll-behavior: contain;
-}
+.insp-body { flex: 1; overflow-y: auto; padding-bottom: 48px; }
 
 .insp-head {
   padding: 11px 12px;
@@ -1842,87 +1782,177 @@ body.is-resizing-artboard-v * { cursor: ns-resize !important; }
   min-height: 60px;
 }
 
-</style>
 
-<script>
-/* Early mobile scroll unlock for Android WebView */
-(function(){
-  function go(){
-    var ua=navigator.userAgent||'';
-    var touch=('ontouchstart'in window)||(navigator.maxTouchPoints>0);
-    if(/Android/i.test(ua)||touch||(window.innerWidth||0)<=1024){
-      document.documentElement.classList.add('vb-scroll');
-      if(document.body) document.body.classList.add('vb-scroll');
-      try{
-        document.documentElement.style.setProperty('overflow','auto','important');
-        document.documentElement.style.setProperty('height','auto','important');
-        if(document.body){
-          document.body.style.setProperty('overflow','auto','important');
-          document.body.style.setProperty('height','auto','important');
-        }
-      }catch(e){}
-    }
+/* ========== MOBILE LAYER A+B (UI + touch bridge only) ========== */
+html { -webkit-text-size-adjust: 100%; }
+body { overscroll-behavior: none; }
+
+/* Floating action buttons – hidden on desktop */
+#vb-mobi-bar {
+  display: none;
+  position: fixed;
+  z-index: 5000;
+  left: 0; right: 0; bottom: 0;
+  padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--panel, #252526) 94%, transparent);
+  border-top: 1px solid var(--line, #3e3e42);
+  backdrop-filter: blur(10px);
+  gap: 6px;
+  align-items: center;
+  justify-content: space-around;
+  box-shadow: 0 -8px 28px rgba(0,0,0,.35);
+}
+#vb-mobi-bar button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-2, #9d9d9d);
+  font: 600 10px/1.2 inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+#vb-mobi-bar button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#vb-mobi-bar button.is-on { color: var(--accent, #007acc); background: var(--accent-soft, rgba(0,122,204,.18)); }
+#vb-mobi-bar button:active { transform: scale(.96); }
+
+#vb-mobi-scrim {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1190;
+  background: rgba(0,0,0,.48);
+  touch-action: manipulation;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --palette-w: min(90vw, 320px) !important;
+    --inspector-w: min(90vw, 340px) !important;
+    --bar-h: 44px;
+    --status-h: 0px; /* status moved / compact */
   }
-  go();
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',go);
-  else go();
-  setTimeout(go,500); setTimeout(go,2000);
-})();
-</script>
-<style id="vb-force-scroll">
-html.vb-scroll, html.vb-scroll body {
-  overflow: auto !important;
-  height: auto !important;
-  min-height: 100% !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-html.vb-scroll #app {
-  height: auto !important;
-  min-height: 100dvh !important;
-  overflow: visible !important;
-}
-html.vb-scroll #mainrow {
-  min-height: 70vh !important;
-  height: auto !important;
-  overflow: visible !important;
-}
-html.vb-scroll #palette,
-html.vb-scroll #inspector {
-  max-height: min(100vh, 100%) !important;
-  overflow: hidden !important;
-}
-html.vb-scroll #palette .pal-body,
-html.vb-scroll #inspector .insp-body,
-html.vb-scroll .pal-body,
-html.vb-scroll .insp-body {
-  overflow-y: scroll !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
-  min-height: 120px !important;
-  max-height: 100% !important;
-}
-html.vb-scroll #viewport {
-  overflow: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  min-height: 50vh !important;
-}
-/* Always force panel internal scroll even without class */
-#palette .pal-body, .pal-body {
-  overflow-y: scroll !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
-}
-#inspector .insp-body, .insp-body {
-  overflow-y: scroll !important;
-  -webkit-overflow-scrolling: touch !important;
-  touch-action: pan-y !important;
-}
-#viewport {
-  overflow: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-</style>
+  #vb-mobi-bar { display: flex; }
+  #vb-mobi-scrim.is-on { display: block; }
 
+  /* Canvas takes full space; panels are drawers */
+  #mainrow {
+    grid-template-columns: 0 0 1fr 0 0 !important;
+  }
+  #mainrow.no-palette, #mainrow.no-right, #mainrow.no-palette.no-right {
+    grid-template-columns: 0 0 1fr 0 0 !important;
+  }
+  #splitL, #splitR { display: none !important; }
+
+  #palette {
+    position: fixed !important;
+    left: 0; top: 0; bottom: 64px;
+    width: min(90vw, 320px) !important;
+    max-width: 94vw !important;
+    z-index: 1200;
+    transform: translateX(-105%);
+    transition: transform .22s cubic-bezier(.4,0,.2,1);
+    box-shadow: 10px 0 36px rgba(0,0,0,.5);
+    visibility: visible !important;
+    display: flex !important;
+    overflow: hidden;
+  }
+  body.vb-mobi-palette #palette { transform: translateX(0); }
+  body.vb-mobi-palette #mainrow { /* keep grid */ }
+
+  #inspector {
+    position: fixed !important;
+    right: 0; top: 0; bottom: 64px;
+    width: min(90vw, 340px) !important;
+    max-width: 94vw !important;
+    z-index: 1200;
+    transform: translateX(105%);
+    transition: transform .22s cubic-bezier(.4,0,.2,1);
+    box-shadow: -10px 0 36px rgba(0,0,0,.5);
+    visibility: visible !important;
+    display: flex !important;
+    overflow: hidden;
+  }
+  body.vb-mobi-inspector #inspector { transform: translateX(0); }
+
+  /* Hide desktop panel toggles / edge tabs on mobile – FABs replace them */
+  .vb-et, #tbTogglePalette, #tbToggleInspector { display: none !important; }
+
+  #commandbar {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 6px;
+    height: auto;
+    min-height: 44px;
+  }
+  .brand span:not(.brand__mark) { font-size: 12px; }
+  .menu__trigger { padding: 8px 10px; min-height: 36px; }
+  .tb-btn { height: 36px; min-width: 36px; padding: 0 10px; }
+  .tb-btn--icon { width: 36px; }
+
+  #toolstrip { flex-wrap: wrap; gap: 4px; padding: 4px 6px; height: auto; min-height: 36px; }
+  .chip { height: 32px; padding: 0 10px; }
+
+  #center { width: 100%; min-width: 0; padding-bottom: 64px; }
+  #viewport {
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+    overscroll-behavior: contain;
+  }
+  #stage { margin: 12px auto 24px; }
+
+  .handle {
+    width: 22px !important;
+    height: 22px !important;
+    margin: -11px 0 0 -11px !important;
+    border-width: 2.5px !important;
+  }
+  .handle--rot { top: -32px !important; width: 24px !important; height: 24px !important; margin-left: -12px !important; }
+
+  .edge-zoom { right: 8px; bottom: 80px; top: auto; transform: none; }
+  .edge-zoom__btn { width: 44px; height: 44px; font-size: 20px; border-radius: 12px; }
+
+  #contextbar { max-width: calc(100vw - 12px); flex-wrap: wrap; gap: 4px; padding: 6px; }
+  .ctx-btn { height: 40px; min-width: 40px; padding: 0 12px; font-size: 13px; }
+
+  #statusbar {
+    display: none; /* FABs + toast cover status needs on mobile */
+  }
+  .pitem { min-height: 64px; padding: 12px 6px; }
+  .pitem__thumb { width: 34px; height: 34px; }
+  .layer { min-height: 40px; }
+  .field { height: 36px; }
+  .insp-tab { height: 36px; }
+  .menu__drop { max-height: 65vh; overflow-y: auto; min-width: min(280px, 92vw); }
+  .menu__row { min-height: 44px; padding: 12px; }
+
+  .modal__box { width: min(96vw, 880px) !important; max-height: 90vh !important; }
+  .modal.is-tool-full .modal__box { width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0; }
+
+  /* Prevent body scroll while drawer open */
+  body.vb-mobi-palette, body.vb-mobi-inspector { overflow: hidden; }
+}
+
+@media (max-width: 600px) {
+  .brand span:not(.brand__mark) { display: none; }
+  #commandbar .tb-sep { display: none; }
+}
+@supports (padding: max(0px)) {
+  @media (max-width: 900px) {
+    #palette { padding-left: env(safe-area-inset-left); }
+    #inspector { padding-right: env(safe-area-inset-right); }
+  }
+}
+
+</style>
 </head>
 <body data-theme="dark">
 
@@ -3558,54 +3588,6 @@ function formatBytes(n) {
 
 function download(filename, content, mime) {
   const blob = content instanceof Blob ? content : new Blob([content], { type: mime || 'text/plain' });
-  // Android WebView / touch: use share or tmpfiles upload (same approach as RECETA index2)
-  const isMobile = /Android/i.test(navigator.userAgent || '') || ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  if (isMobile && typeof window.__vbSaveBlob === 'function') {
-    window.__vbSaveBlob(blob, filename);
-    return;
-  }
-  if (isMobile) {
-    // Inline fallback if patch not ready yet
-    (async function () {
-      try {
-        const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: filename });
-          return;
-        }
-      } catch (e) {}
-      try {
-        const fd = new FormData();
-        fd.append('file', blob, filename);
-        const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd });
-        const out = await res.json();
-        let u = (out && out.data && (out.data.url_download || out.data.url)) || '';
-        try {
-          const p = new URL(u);
-          if (/(^|\.)tmpfiles\.org$/i.test(p.hostname) && !/\/dl\//i.test(p.pathname)) {
-            u = p.origin + '/dl' + p.pathname + p.search;
-          }
-        } catch (e2) {}
-        if (u) {
-          if (/Android/i.test(navigator.userAgent)) {
-            const intent = 'intent://' + u.replace(/^https?:\/\//, '') +
-              '#Intent;scheme=https;package=com.android.chrome;S.browserFallbackUri=' +
-              encodeURIComponent(u) + ';end';
-            try { window.open(intent, '_blank'); } catch (e3) { location.href = u; }
-          } else {
-            window.open(u, '_blank');
-          }
-          return;
-        }
-      } catch (e4) {}
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-    })();
-    return;
-  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -17691,60 +17673,6 @@ ${css}
 [data-type^="three_"],[data-type="model3d"]{position:relative;min-height:280px;overflow:hidden}
 .vb-site-nav a{color:#334155;text-decoration:none}
 .vb-site-nav a.is-current{color:var(--color-primary,#4f46e5)}
-
-/* Panel height bounds so internal scroll works on Android WebView */
-html.vb-scroll #palette,
-html.vb-scroll #inspector {
-  max-height: 75vh !important;
-  height: 75vh !important;
-  overflow: hidden !important;
-}
-html.vb-scroll #palette .pal-body,
-html.vb-scroll #inspector .insp-body {
-  height: 100% !important;
-  max-height: none !important;
-  overflow-y: scroll !important;
-}
-html.vb-scroll #mainrow {
-  grid-auto-rows: minmax(50vh, auto) !important;
-}
-@media (max-width: 900px) {
-  #mainrow {
-    display: flex !important;
-    flex-direction: column !important;
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow: visible !important;
-  }
-  #palette, #inspector {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 40vh !important;
-    max-height: 40vh !important;
-    min-height: 180px !important;
-    overflow: hidden !important;
-    border: none !important;
-  }
-  #palette .pal-body, #inspector .insp-body, .pal-body, .insp-body {
-    height: calc(40vh - 50px) !important;
-    overflow-y: scroll !important;
-    -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-y !important;
-  }
-  #center {
-    width: 100% !important;
-    min-height: 50vh !important;
-    height: auto !important;
-  }
-  #viewport {
-    min-height: 50vh !important;
-    height: 55vh !important;
-    overflow: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  #splitL, #splitR { display: none !important; }
-}
-
 </style>
 </head>
 <body class="vbpage">
@@ -18586,60 +18514,6 @@ ${rootTypographyFor(doc)}
 ${css}
 [data-type^="three_"],[data-type="model3d"]{position:relative;min-height:280px;overflow:hidden}
 .vb-three-mount{position:absolute;inset:0}
-
-/* Panel height bounds so internal scroll works on Android WebView */
-html.vb-scroll #palette,
-html.vb-scroll #inspector {
-  max-height: 75vh !important;
-  height: 75vh !important;
-  overflow: hidden !important;
-}
-html.vb-scroll #palette .pal-body,
-html.vb-scroll #inspector .insp-body {
-  height: 100% !important;
-  max-height: none !important;
-  overflow-y: scroll !important;
-}
-html.vb-scroll #mainrow {
-  grid-auto-rows: minmax(50vh, auto) !important;
-}
-@media (max-width: 900px) {
-  #mainrow {
-    display: flex !important;
-    flex-direction: column !important;
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow: visible !important;
-  }
-  #palette, #inspector {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 40vh !important;
-    max-height: 40vh !important;
-    min-height: 180px !important;
-    overflow: hidden !important;
-    border: none !important;
-  }
-  #palette .pal-body, #inspector .insp-body, .pal-body, .insp-body {
-    height: calc(40vh - 50px) !important;
-    overflow-y: scroll !important;
-    -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-y !important;
-  }
-  #center {
-    width: 100% !important;
-    min-height: 50vh !important;
-    height: auto !important;
-  }
-  #viewport {
-    min-height: 50vh !important;
-    height: 55vh !important;
-    overflow: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  #splitL, #splitR { display: none !important; }
-}
-
 </style>
 </head>
 <body class="vbpage">
@@ -18688,60 +18562,6 @@ function indexHtmlLinked() {
 <link rel="stylesheet" href="styles.css">
 <style>
 [data-type^="three_"],[data-type="model3d"]{position:relative;min-height:280px;overflow:hidden}
-
-/* Panel height bounds so internal scroll works on Android WebView */
-html.vb-scroll #palette,
-html.vb-scroll #inspector {
-  max-height: 75vh !important;
-  height: 75vh !important;
-  overflow: hidden !important;
-}
-html.vb-scroll #palette .pal-body,
-html.vb-scroll #inspector .insp-body {
-  height: 100% !important;
-  max-height: none !important;
-  overflow-y: scroll !important;
-}
-html.vb-scroll #mainrow {
-  grid-auto-rows: minmax(50vh, auto) !important;
-}
-@media (max-width: 900px) {
-  #mainrow {
-    display: flex !important;
-    flex-direction: column !important;
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow: visible !important;
-  }
-  #palette, #inspector {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 40vh !important;
-    max-height: 40vh !important;
-    min-height: 180px !important;
-    overflow: hidden !important;
-    border: none !important;
-  }
-  #palette .pal-body, #inspector .insp-body, .pal-body, .insp-body {
-    height: calc(40vh - 50px) !important;
-    overflow-y: scroll !important;
-    -webkit-overflow-scrolling: touch !important;
-    touch-action: pan-y !important;
-  }
-  #center {
-    width: 100% !important;
-    min-height: 50vh !important;
-    height: auto !important;
-  }
-  #viewport {
-    min-height: 50vh !important;
-    height: 55vh !important;
-    overflow: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  #splitL, #splitR { display: none !important; }
-}
-
 </style>
 </head>
 <body class="vbpage">
@@ -26899,380 +26719,213 @@ if (document.readyState === 'loading') {
 </script>
 
 <script>
-/* ============================================================
-   Eagle Visual Builder — Mobile / Android WebView compatibility
-   - Downloads via share / tmpfiles.org (WebView-safe)
-   - Whole-UI scroll on small screens
-   - Touch pan / pinch-zoom / better drag
-   ============================================================ */
+/* ===== Eagle Visual Builder – Mobile layer (A: touch bridge, B: FAB UI) ===== */
 (function () {
   'use strict';
-  if (window.__VB_MOBILE_PATCH__) return;
-  window.__VB_MOBILE_PATCH__ = true;
+  var MQ = '(max-width: 900px)';
 
-  var UPLOAD_API = 'https://tmpfiles.org/api/v1/upload';
-
-  function isAndroid() {
-    return /Android/i.test(navigator.userAgent || '');
-  }
-  function isTouch() {
-    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  function isMobile() {
+    try { return window.matchMedia && window.matchMedia(MQ).matches; } catch (e) { return false; }
   }
 
-  function directUrl(res) {
-    var d = (res && res.data) || {};
-    var u = d.url_download || d.url || '';
-    if (!u) return '';
-    try {
-      var p = new URL(u);
-      if (/(^|\.)tmpfiles\.org$/i.test(p.hostname) && !/\/dl\//i.test(p.pathname)) {
-        u = p.origin + '/dl' + p.pathname + p.search;
-      }
-    } catch (e) {}
-    return u;
-  }
+  /* ---------- A) Touch → Mouse bridge ----------
+     Lets existing mouse-based drag/resize/select work on touch devices
+     without changing core app logic. Skips inputs/textareas. */
+  (function installTouchBridge() {
+    var tracking = null; // {target, id}
 
-  function openDownload(url) {
-    if (isAndroid() && /^https?:/i.test(url)) {
-      var intent = 'intent://' + url.replace(/^https?:\/\//, '') +
-        '#Intent;scheme=https;package=com.android.chrome;S.browserFallbackUri=' +
-        encodeURIComponent(url) + ';end';
-      var handed = false;
-      try { handed = !!window.open(intent, '_blank'); } catch (e) {}
-      setTimeout(function () {
-        if (!handed) {
-          try { window.location.href = url; } catch (e2) {}
-        }
-      }, 1200);
-      return;
-    }
-    var w = null;
-    try { w = window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) {}
-    if (!w) {
-      try { window.location.href = url; } catch (e3) {}
-      return;
-    }
-    setTimeout(function () { try { w.close(); } catch (e4) {} }, 2500);
-  }
-
-  async function saveBlobMobile(blob, filename) {
-    // 1) native share (Android Chrome / WebView with File share)
-    try {
-      var file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: filename });
-        return 'shared';
-      }
-    } catch (e) {
-      if (e && e.name === 'AbortError') return 'cancel';
+    function targetIsEditable(el) {
+      if (!el || !el.tagName) return false;
+      var t = el.tagName.toLowerCase();
+      if (t === 'input' || t === 'textarea' || t === 'select') return true;
+      if (el.isContentEditable) return true;
+      return false;
     }
 
-    // 2) upload then open download link (WebView-safe)
-    try {
-      if (window.widgets && widgets.toast) widgets.toast('Uploading for download…', 'ok');
-      var fd = new FormData();
-      fd.append('file', blob, filename);
-      var res = await fetch(UPLOAD_API, { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      var out = await res.json();
-      var direct = directUrl(out);
-      if (!direct) throw new Error('no url');
-      if (window.widgets && widgets.toast) widgets.toast('Opening download…', 'ok');
-      openDownload(direct);
-      return 'upload';
-    } catch (e) {
-      console.warn('[mobile download upload]', e);
-    }
-
-    // 3) fallback classic <a download>
-    try {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-      return 'download';
-    } catch (e2) {
-      return 'cancel';
-    }
-  }
-
-  // Override global download used by exporter
-  window.__vbSaveBlob = saveBlobMobile;
-
-  function patchDownload() {
-    // Replace the free function `download` if present in scope via window.VB or host
-    var orig = window.download;
-    window.download = function (filename, content, mime) {
-      var blob = content instanceof Blob ? content : new Blob([content], { type: mime || 'text/plain' });
-      // Prefer mobile path on touch / Android
-      if (isAndroid() || isTouch()) {
-        saveBlobMobile(blob, filename).then(function (how) {
-          if (window.widgets && widgets.toast) {
-            if (how === 'shared' || how === 'upload' || how === 'download')
-              widgets.toast(filename + ' ready', 'ok');
-            else if (how === 'cancel')
-              widgets.toast('Download cancelled', 'err');
-          }
+    function fire(type, touch, target, buttons) {
+      var ev;
+      try {
+        ev = new MouseEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          screenX: touch.screenX,
+          screenY: touch.screenY,
+          button: 0,
+          buttons: buttons != null ? buttons : (type === 'mouseup' ? 0 : 1),
+          ctrlKey: false,
+          shiftKey: false,
+          altKey: false,
+          metaKey: false
         });
-        return;
+      } catch (e) {
+        ev = document.createEvent('MouseEvents');
+        ev.initMouseEvent(type, true, true, window, 1,
+          touch.screenX, touch.screenY, touch.clientX, touch.clientY,
+          false, false, false, false, 0, null);
       }
-      if (typeof orig === 'function') return orig(filename, content, mime);
-      // classic fallback
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    };
-
-    // Also patch host.saveText / host.saveBytes if they exist (Electron bridge)
-    try {
-      if (window.host) {
-        var hs = host.saveText;
-        var hb = host.saveBytes;
-        host.saveText = async function (name, text) {
-          if (isAndroid() || isTouch()) {
-            var blob = new Blob([text], { type: 'text/plain' });
-            await saveBlobMobile(blob, name);
-            return true;
-          }
-          if (typeof hs === 'function') return hs.apply(this, arguments);
-          return false;
-        };
-        host.saveBytes = async function (name, b64) {
-          if (isAndroid() || isTouch()) {
-            var bin = atob(b64);
-            var arr = new Uint8Array(bin.length);
-            for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-            var blob = new Blob([arr], { type: 'application/octet-stream' });
-            await saveBlobMobile(blob, name);
-            return true;
-          }
-          if (typeof hb === 'function') return hb.apply(this, arguments);
-          return false;
-        };
-      }
-    } catch (e) {}
-  }
-
-  /* ---------- CSS: allow whole-UI scroll on mobile ---------- */
-  function injectCss() {
-    if (document.getElementById('vb-mobile-css')) return;
-    var css = document.createElement('style');
-    css.id = 'vb-mobile-css';
-    css.textContent = [
-      '/* FORCE full-page scroll for Android WebView + touch devices */',
-      'html.vb-scroll, html.vb-scroll body {',
-      '  overflow: auto !important;',
-      '  overflow-x: auto !important;',
-      '  overflow-y: auto !important;',
-      '  height: auto !important;',
-      '  min-height: 100% !important;',
-      '  max-height: none !important;',
-      '  position: relative !important;',
-      '  -webkit-overflow-scrolling: touch !important;',
-      '  overscroll-behavior: auto !important;',
-      '  touch-action: manipulation !important;',
-      '}',
-      'html.vb-scroll #app {',
-      '  height: auto !important;',
-      '  min-height: 100dvh !important;',
-      '  max-height: none !important;',
-      '  overflow: visible !important;',
-      '  display: flex !important;',
-      '  flex-direction: column !important;',
-      '}',
-      'html.vb-scroll #mainrow {',
-      '  flex: 1 1 auto !important;',
-      '  min-height: 70vh !important;',
-      '  height: auto !important;',
-      '  max-height: none !important;',
-      '  overflow: visible !important;',
-      '}',
-      'html.vb-scroll #center {',
-      '  min-height: 60vh !important;',
-      '  height: auto !important;',
-      '  overflow: visible !important;',
-      '}',
-      'html.vb-scroll #viewport {',
-      '  overflow: auto !important;',
-      '  -webkit-overflow-scrolling: touch !important;',
-      '  min-height: 55vh !important;',
-      '  height: auto !important;',
-      '  max-height: none !important;',
-      '  touch-action: pan-x pan-y !important;',
-      '}',
-      'html.vb-scroll #palette,',
-      'html.vb-scroll #inspector {',
-      '  max-height: 45vh !important;',
-      '  overflow-y: auto !important;',
-      '  -webkit-overflow-scrolling: touch !important;',
-      '}',
-      'html.vb-scroll #commandbar,',
-      'html.vb-scroll #toolstrip { flex-wrap: wrap !important; }',
-      'html.vb-scroll body { user-select: auto !important; }',
-      'html.vb-scroll .vb-b, html.vb-scroll .handle { touch-action: none !important; }',
-      'html.vb-scroll .handle { width: 18px !important; height: 18px !important; margin: -9px 0 0 -9px !important; }',
-      '/* also apply via media as backup */',
-      '@media (max-width: 1024px), (pointer: coarse) {',
-      '  html, body { overflow: auto !important; height: auto !important; min-height: 100% !important; }',
-      '  #app { height: auto !important; min-height: 100dvh !important; overflow: visible !important; }',
-      '  #viewport { overflow: auto !important; -webkit-overflow-scrolling: touch !important; min-height: 55vh !important; }',
-      '}'
-    ].join('\\n');
-    document.head.appendChild(css);
-    // Always enable on Android / coarse pointer / small width
-    function enable() {
-      var ua = navigator.userAgent || '';
-      var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-      var android = /Android/i.test(ua);
-      var small = (window.innerWidth || 9999) <= 1024;
-      if (android || touch || small) {
-        document.documentElement.classList.add('vb-scroll');
-        document.body && document.body.classList.add('vb-scroll');
-        // unlock any inline styles the app may set
-        try {
-          document.documentElement.style.overflow = 'auto';
-          document.documentElement.style.height = 'auto';
-          document.body.style.overflow = 'auto';
-          document.body.style.height = 'auto';
-          var app = document.getElementById('app');
-          if (app) { app.style.height = 'auto'; app.style.overflow = 'visible'; app.style.minHeight = '100dvh'; }
-          var vp = document.getElementById('viewport');
-          if (vp) { vp.style.overflow = 'auto'; vp.style.webkitOverflowScrolling = 'touch'; }
-        } catch (e) {}
-      }
-    }
-    enable();
-    window.addEventListener('resize', enable);
-    setTimeout(enable, 300);
-    setTimeout(enable, 1200);
-  }
-
-  /* ---------- Touch: map touch → pointer/mouse for pan & drag ---------- */
-  function enhanceTouch() {
-    var vp = document.getElementById('viewport');
-    if (!vp || vp.__vbTouch) return;
-    vp.__vbTouch = true;
-
-    var pts = {};
-    var pinch = null;
-    var lastPan = null;
-
-    function ids() { return Object.keys(pts); }
-    function dist() {
-      var k = ids();
-      if (k.length < 2) return 1;
-      var a = pts[k[0]], b = pts[k[1]];
-      return Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      // Mark so we can detect synthetic events if needed
+      try { ev._fromTouch = true; } catch (e2) {}
+      target.dispatchEvent(ev);
     }
 
-    // Pinch-to-zoom on the canvas viewport
-    vp.addEventListener('touchstart', function (e) {
-      if (!e.touches || !e.touches.length) return;
-      for (var i = 0; i < e.touches.length; i++) {
-        var t = e.touches[i];
-        pts[t.identifier] = { x: t.clientX, y: t.clientY };
+    document.addEventListener('touchstart', function (e) {
+      if (!e.changedTouches || !e.changedTouches.length) return;
+      if (e.touches.length > 1) { tracking = null; return; } // let multi-touch (pinch) alone
+      var t = e.changedTouches[0];
+      var el = document.elementFromPoint(t.clientX, t.clientY) || e.target;
+      if (targetIsEditable(el)) return;
+      // Don't hijack UI chrome buttons/menus
+      if (el.closest && el.closest('#vb-mobi-bar, #vb-mobi-scrim, .menu__drop, .modal, input, textarea, select, button, a, .ctxmenu')) {
+        // still allow buttons to work natively; only bridge for canvas interactions
+        if (!el.closest('#viewport, #canvas, #overlay, .handle, .vb-b, #stage')) return;
       }
-      if (ids().length === 2) {
-        var k = ids();
-        pinch = { d: dist(), z: (window.state && state.view && state.view.zoom) || 1 };
-        lastPan = null;
-        e.preventDefault();
-      } else if (ids().length === 1 && e.touches[0]) {
-        // two-finger space not held: allow one-finger pan when no block under finger
-        var target = e.target;
-        var onBlock = target && (target.closest && target.closest('.vb-b, .handle, .sel'));
-        if (!onBlock) {
-          lastPan = { x: e.touches[0].clientX, y: e.touches[0].clientY, sx: vp.scrollLeft, sy: vp.scrollTop };
-        }
-      }
-    }, { passive: false });
+      tracking = { id: t.identifier, target: el };
+      fire('mousedown', t, el, 1);
+    }, { passive: true, capture: true });
 
-    vp.addEventListener('touchmove', function (e) {
-      if (!e.touches) return;
-      for (var i = 0; i < e.touches.length; i++) {
-        var t = e.touches[i];
-        pts[t.identifier] = { x: t.clientX, y: t.clientY };
+    document.addEventListener('touchmove', function (e) {
+      if (!tracking || !e.changedTouches) return;
+      if (e.touches && e.touches.length > 1) return;
+      var t = null;
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === tracking.id) { t = e.changedTouches[i]; break; }
       }
-      if (pinch && ids().length >= 2) {
-        e.preventDefault();
-        var ratio = dist() / (pinch.d || 1);
-        var nz = Math.max(0.15, Math.min(4, pinch.z * ratio));
-        try {
-          if (window.interact && typeof interact.setZoom === 'function') {
-            interact.setZoom(nz);
-          } else if (window.state && state.view) {
-            state.view.zoom = nz;
-            if (typeof applyTransform === 'function') applyTransform();
-            if (window.emit) emit('view');
-          } else if (window.VB && VB.state && VB.state.view) {
-            VB.state.view.zoom = nz;
-            if (typeof applyTransform === 'function') applyTransform();
-          }
-        } catch (err) {}
-        return;
+      if (!t) return;
+      // Prefer element under finger for move, but keep original target for consistency with mouse drag
+      fire('mousemove', t, tracking.target, 1);
+      // Prevent page scroll while dragging on canvas
+      if (tracking.target && tracking.target.closest && tracking.target.closest('#viewport, #canvas, #overlay, .handle, .vb-b')) {
+        if (e.cancelable) e.preventDefault();
       }
-      if (lastPan && ids().length === 1) {
-        var t0 = e.touches[0];
-        var dx = t0.clientX - lastPan.x;
-        var dy = t0.clientY - lastPan.y;
-        vp.scrollLeft = lastPan.sx - dx;
-        vp.scrollTop = lastPan.sy - dy;
-        // do not preventDefault so native scroll still works when needed
-      }
-    }, { passive: false });
+    }, { passive: false, capture: true });
 
     function endTouch(e) {
-      if (e.changedTouches) {
-        for (var i = 0; i < e.changedTouches.length; i++) {
-          delete pts[e.changedTouches[i].identifier];
-        }
+      if (!tracking || !e.changedTouches) return;
+      var t = null;
+      for (var i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === tracking.id) { t = e.changedTouches[i]; break; }
       }
-      if (ids().length < 2) pinch = null;
-      if (ids().length === 0) lastPan = null;
+      if (!t) return;
+      fire('mouseup', t, tracking.target, 0);
+      // click synthesis for simple taps
+      try {
+        fire('click', t, document.elementFromPoint(t.clientX, t.clientY) || tracking.target, 0);
+      } catch (err) {}
+      tracking = null;
     }
-    vp.addEventListener('touchend', endTouch, { passive: true });
-    vp.addEventListener('touchcancel', endTouch, { passive: true });
+    document.addEventListener('touchend', endTouch, { passive: true, capture: true });
+    document.addEventListener('touchcancel', endTouch, { passive: true, capture: true });
+  })();
 
-    // Double-tap to zoom fit / reset
-    var lastTap = 0;
-    vp.addEventListener('touchend', function (e) {
-      if (e.touches && e.touches.length) return;
-      var now = Date.now();
-      if (now - lastTap < 280) {
+  /* ---------- B) Mobile FAB bar + drawers ---------- */
+  function ensureUI() {
+    if (document.getElementById('vb-mobi-bar')) return;
+    var scrim = document.createElement('div');
+    scrim.id = 'vb-mobi-scrim';
+    document.body.appendChild(scrim);
+
+    var bar = document.createElement('div');
+    bar.id = 'vb-mobi-bar';
+    bar.innerHTML = [
+      '<button type="button" data-act="palette" aria-label="Components">',
+      '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+      '<span>Components</span></button>',
+      '<button type="button" data-act="inspector" aria-label="Properties">',
+      '<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg>',
+      '<span>Properties</span></button>',
+      '<button type="button" data-act="preview" aria-label="Preview">',
+      '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+      '<span>Preview</span></button>',
+      '<button type="button" data-act="more" aria-label="Menu">',
+      '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>',
+      '<span>Menu</span></button>'
+    ].join('');
+    document.body.appendChild(bar);
+
+    function closeDrawers() {
+      document.body.classList.remove('vb-mobi-palette', 'vb-mobi-inspector');
+      scrim.classList.remove('is-on');
+      bar.querySelectorAll('button').forEach(function (b) { b.classList.remove('is-on'); });
+      // also sync desktop panel classes so layout stays canvas-only
+      var row = document.getElementById('mainrow');
+      if (row) row.classList.add('no-palette', 'no-right');
+    }
+
+    function openPalette() {
+      var row = document.getElementById('mainrow');
+      if (row) { row.classList.remove('no-palette'); row.classList.add('no-right'); }
+      document.body.classList.add('vb-mobi-palette');
+      document.body.classList.remove('vb-mobi-inspector');
+      scrim.classList.add('is-on');
+      bar.querySelectorAll('button').forEach(function (b) {
+        b.classList.toggle('is-on', b.getAttribute('data-act') === 'palette');
+      });
+    }
+
+    function openInspector() {
+      var row = document.getElementById('mainrow');
+      if (row) { row.classList.remove('no-right'); row.classList.add('no-palette'); }
+      document.body.classList.add('vb-mobi-inspector');
+      document.body.classList.remove('vb-mobi-palette');
+      scrim.classList.add('is-on');
+      bar.querySelectorAll('button').forEach(function (b) {
+        b.classList.toggle('is-on', b.getAttribute('data-act') === 'inspector');
+      });
+    }
+
+    scrim.addEventListener('click', closeDrawers);
+
+    bar.addEventListener('click', function (e) {
+      var btn = e.target.closest('button[data-act]');
+      if (!btn) return;
+      var act = btn.getAttribute('data-act');
+      if (act === 'palette') {
+        if (document.body.classList.contains('vb-mobi-palette')) closeDrawers();
+        else openPalette();
+      } else if (act === 'inspector') {
+        if (document.body.classList.contains('vb-mobi-inspector')) closeDrawers();
+        else openInspector();
+      } else if (act === 'preview') {
+        closeDrawers();
         try {
-          if (window.interact && interact.fit) interact.fit();
-          else if (window.interact && interact.zoomReset) interact.zoomReset();
+          if (typeof runCommand === 'function') runCommand('view.preview');
+          else {
+            var p = document.querySelector('[data-cmd="view.preview"], #tbPreview, button[title*="Preview"]');
+            if (p) p.click();
+          }
         } catch (err) {}
-        lastTap = 0;
-      } else {
-        lastTap = now;
+      } else if (act === 'more') {
+        closeDrawers();
+        // open first menu (File) as a practical "more"
+        try {
+          var m = document.querySelector('#menus .menu__trigger');
+          if (m) m.click();
+        } catch (err) {}
       }
-    }, { passive: true });
+    });
+
+    // Start with panels collapsed on mobile
+    if (isMobile()) {
+      var row = document.getElementById('mainrow');
+      if (row) row.classList.add('no-palette', 'no-right');
+      try {
+        localStorage.setItem('vb_panel_visibility', JSON.stringify({ palette: false, inspector: false }));
+      } catch (e) {}
+    }
   }
 
-  function bootPatch() {
-    injectCss();
-    patchDownload();
-    // delay touch enhance until DOM ready / after app boot
-    setTimeout(enhanceTouch, 400);
-    setTimeout(enhanceTouch, 1500);
-    // re-patch download after modules load
-    setTimeout(patchDownload, 800);
+  function boot() {
+    ensureUI();
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootPatch);
-  } else {
-    bootPatch();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  // re-ensure after app scripts finish painting
+  setTimeout(boot, 400);
 })();
 </script>
+
 </body>
 </html>
