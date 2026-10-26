@@ -1,0 +1,45 @@
+[
+  {
+    "id": "sample-ui-kit",
+    "label": "Sample UI Kit",
+    "blocks": [
+      {
+        "type": "paragraph",
+        "label": "Callout",
+        "defaults": {
+          "props": {
+            "text": "\ud83d\udca1 Tip: customize this callout"
+          },
+          "style": {
+            "pT": 12,
+            "pR": 14,
+            "pB": 12,
+            "pL": 14,
+            "radius": 12,
+            "bg": "#eef2ff",
+            "color": "#3730a3"
+          }
+        }
+      },
+      {
+        "type": "button",
+        "label": "Pill CTA",
+        "defaults": {
+          "props": {
+            "text": "Continue"
+          },
+          "style": {
+            "radius": 999,
+            "pT": 12,
+            "pR": 22,
+            "pB": 12,
+            "pL": 22,
+            "bg": "#6366f1",
+            "color": "#fff",
+            "fontWeight": 700
+          }
+        }
+      }
+    ]
+  }
+]
