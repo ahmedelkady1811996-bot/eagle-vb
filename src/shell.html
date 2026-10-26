@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Eagle Visual Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Playfair+Display:wght@600;700;900&display=swap" rel="stylesheet">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+<link rel="icon" type="image/png" href="IMAGES/eagle.png"/>
+<link rel="stylesheet" href="src/ui/app.css">
+</head>
+<body data-theme="dark">
+
+<div id="app">
+
+  <header id="commandbar">
+    <div class="brand"><span class="brand__mark"></span><span>Eagle Visual Builder</span></div>
+    <nav id="menus"></nav>
+    <span class="spacer"></span>
+    <button class="tb-btn" id="tbUndo" title="Undo (Ctrl+Z)">Undo</button>
+    <button class="tb-btn" id="tbRedo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+    <button class="tb-btn tb-btn--icon" id="tbTheme" title="Toggle theme">◐</button>
+    <button class="tb-btn tb-btn--primary" id="tbExport" title="Export code (Ctrl+E)">Export</button>
+  </header>
+
+  <div id="mainrow">
+    <aside id="palette"></aside>
+    <div class="splitter" id="splitL"></div>
+
+    <div id="center">
+      <div id="toolstrip"></div>
+      <div id="viewport">
+        <div id="stage">
+          <div id="canvas"></div>
+          <div id="overlay"></div>
+          <div id="guides"></div>
+          <div id="marquee"></div>
+          <div id="size-hint"></div>
+        </div>
+        <div id="contextbar"></div>
+        <div id="rulers"></div>
+      </div>
+    </div>
+
+    <div class="splitter" id="splitR"></div>
+    <aside id="inspector"></aside>
+  </div>
+
+  <footer id="statusbar"></footer>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal__box">
+    <div class="modal__bar">
+      <h3 id="modalTitle">Title</h3>
+      <span class="spacer"></span>
+      <div id="modalActions"></div>
+      <button class="tb-btn" id="modalClose">Close</button>
+    </div>
+    <div class="modal__body" id="modalBody"></div>
+  </div>
+</div>
+
+<div id="popover"></div>
+<div id="toasts"></div>
+
+(function () {
+  if (location.protocol === 'file:') return;
+  var shown = false;
+  function warn() {
+    if (shown) return;
+    shown = true;
+    var bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:9999;max-width:420px;padding:12px 14px;'
+      + 'border-radius:12px;background:#1f2937;color:#e5e7eb;font:13px/1.6 system-ui,sans-serif;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)';
+    bar.innerHTML = '<b style="display:block;margin-bottom:4px">Open this file over http</b>'
+      + 'Browsers block ES modules on <code>file://</code>.<br>'
+      + 'Run <code>start.bat</code>, or the Electron app, or <code>node dev/serve.js</code>.';
+    document.body.appendChild(bar);
+    setTimeout(function () { bar.remove(); }, 9000);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', warn);
+  else warn();
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
