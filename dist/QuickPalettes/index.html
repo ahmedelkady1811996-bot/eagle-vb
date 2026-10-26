@@ -1,0 +1,1249 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+  *
+  {
+
+    padding: 0;
+    margin: 0;
+
+  }
+  
+    :root
+  {
+    --primary-color: #FAFAFC;
+    --primaryboarder-color: #858585;
+    --fieldset-color: #F1F1F1;
+    --fieldsetboarder-color: #c1c1cb;
+    --txthead-color: #52535a;
+    --txtsub-color: #939191;
+    --dropdown-color: #D3D3D3;
+    --dropdownboarder-color: #b0b0bd;
+    --btnprimary-color: #14161f;
+    --icon-color: #FFFFFF;
+    --container-color: rgba(223, 223, 223, 0.637);
+    --containerboarder-color: #c1c1cb;
+    --colortabbg-color: #FFFFFF;
+    --colortabboarder-color: #cbcbcb;
+    --colordot-color: #14161f71;
+    --txthex-color: #565656b8;
+    --txthexlabel-color: rgb(215 215 215);
+    --txthexlabelborder-color: #b1b1b185;
+    --invisbtn-color: #414141d5;
+    --inputfoccus-color: #0a0a0a;
+    --btnclear-color: #9C9DA2;
+    --selecttext-color: rgb(80 76 76);
+    --btncreatesecond-color: rgb(156, 157, 162);
+    --importbtnbg-color: rgb(209, 209, 209);
+    --importicon-color: #505050;
+  }
+
+  body
+  {
+    
+    background-color: var(--primary-color);
+    display: flex;
+    font-family: inter;
+    font-size: 0.8rem;
+    color: var(--txthead-color);
+    border: none;
+    overflow: hidden;
+    align-items: center;
+    
+  }
+
+  form
+  {
+
+    color: var(--txthead-color);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.9rem;
+    align-items: center;
+    letter-spacing: .2;
+    
+  }
+
+  form input:focus
+  {
+    /* outline: none; */
+    outline-color: var(--inputfoccus-color);
+    outline:thin solid
+  }
+  form .main-container .setHexNameValue input
+  {
+
+    background-color: var(--fieldset-color);
+    border: solid 1px var(--fieldsetboarder-color);
+    padding: 4px;
+    width: 100%;
+    height: 30px;
+    border-radius: 4.8px;
+
+  }
+
+  form .main-container .setHexNameValue #hexField
+  {
+    border-top-right-radius: 0px; 
+    border-bottom-right-radius: 0px; 
+    border-right: none;
+  }
+
+
+  .color-field div
+  {
+    display: flex;
+    margin-top: .2rem
+  }
+
+  .main-container .helper-tip
+  {
+    font-size: .68rem;
+    font-weight:440;
+    margin-top: .2rem;
+    color: var(--txtsub-color);
+    letter-spacing: .4;
+  }
+
+  .main-container .setHexNameValue label
+  {
+    font-weight: 540;
+    margin-bottom: 3rem;
+    font-size: .78rem;
+  }
+
+  .setHexNameValue
+  {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+
+  .hex-to-be-paleted 
+  {
+    
+    display: flex;
+    flex-direction: column;
+    margin-top: 4px;
+    background-color: var(--container-color);
+    border: var(--containerboarder-color) 1px dashed;
+    height: 21vh;
+    border-radius: 6.8px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--containerboarder-color) transparent;
+    cursor: not-allowed;
+    scroll-margin: 0;
+    scroll-padding: 0;
+    background-image: repeating-linear-gradient(134deg, #d1d1d1, #d1d1d1 1px, #eee 1px, #eee 14px);
+
+  }
+
+  .paletteHead
+  {
+
+    font-weight: 540;
+    font-size: .78rem;
+
+  }
+
+
+  .options-check
+  {
+    display: flex;
+    flex-direction: column;
+  }
+
+  select
+  {
+
+    background-color: var(--dropdown-color);
+    border: solid 1px var(--dropdownboarder-color);
+    padding: 2px 7px;
+    color: var(--selecttext-color);
+    border-radius: 4.8px;
+    margin-top: .2rem;
+    height: 34px;
+
+  }
+
+  select:focus
+  {
+        outline-color: var(--inputfoccus-color);
+    outline:thin solid
+  }
+
+  button
+  {
+
+    padding: .2rem;
+    background-color: var(--btncreatesecond-color);
+    border: none;
+    color: var(--icon-color);
+    border-radius: 4.8px;
+    height: 30px;
+    
+  }
+  .btnGroup button 
+  {
+
+    margin-top: 7px;
+
+  }
+
+  .btnGroup button:nth-child(3)
+  {
+
+    font-weight: 600;
+    height: 38;
+    background-color: var(--importbtnbg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    order: -1;
+    padding: .2rem;
+    width: 30%;
+
+  }
+
+  .btnGroup button:nth-child(2)
+  {
+
+    width: 70%;
+    background-color: var(--btncreatesecond-color);
+    font-weight: 600;
+    padding: 5px;
+    height: 38px;
+    cursor: not-allowed;
+
+  }
+  
+
+  .options-check label
+  {
+
+    font-weight: 540;
+    font-size: .78rem;
+    margin-top: 8px;
+    
+  }
+
+  .color-tab
+  {
+
+    display: flex;
+    background-color: var(--colortabbg-color);
+    justify-content: space-between;
+    border: solid 1px var(--colortabboarder-color);
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: 5px 8px;
+    align-items: center;
+    font-size: .78rem;
+
+  }
+
+  .toast-copy
+  {
+
+    display: flex;
+    background-color: var(--primary-color);
+    border: solid .4px #b8b5b5;
+    padding: .8rem;
+    justify-content: center;
+    font-size: .7rem;
+    border-radius: 5px;
+    align-items: center;
+    position: absolute;
+    filter: drop-shadow(2px 2px 4px #6e6e6e);
+    animation:  toastSlideUp 0.8s  forwards ;
+    bottom: -100px;
+    margin: auto;
+    width: 197px;
+
+  }
+
+  .toast-copy p
+  {
+
+    margin-left: 11px;
+    color: var(--btnprimary-color);
+    font-weight: 500;
+
+  }
+
+
+  .currentHexRow
+  {
+
+    display: flex;
+    background-color: var(--colortabbg-color);
+    align-items: center;
+    justify-content: space-between;
+    border: solid var(--colortabboarder-color) 1px;
+    border-top: 0px;
+    border-left: 0px;
+    padding: .4rem .8rem;
+    border-right: 0px;
+    cursor: auto;
+    font-size: .78rem;
+
+  }
+    
+  .currentHexRow .hexTextWrap .hexBlock 
+  {
+   
+    color: var(--txthex-color);
+    font-weight: 540;
+    background-color: var(--txthexlabel-color);
+    width: fit-content;
+    padding: 1px;
+    border: solid 1px var(--txthexlabelborder-color);
+    border-radius: 2px;
+    font-size: 9.8px;
+  
+  }
+
+  .currentHexRow .hexTextWrap .hexName
+  {
+
+    color: rgb(80 76 76);
+    width: fit-content;
+    padding: 0px 4px;
+    font-weight: 400;
+
+  }
+  .deleteBtn
+  {
+    background-color: transparent;
+    margin-left: 8px;
+  }
+
+  .deleteBtn svg
+  {
+    height: 18px;
+    width: 18px;
+    fill: rgba(255, 0, 0, 0.233);
+  }
+
+  .btnClear
+  {
+
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    color: var(--btnclear-color);
+    font-size: .7rem;
+    transition: .8ms;
+    font-weight: 450;
+
+  }
+
+    .btnClear:hover
+  {
+    color: var(--invisbtn-color)
+  }
+
+  .colorDot
+  {
+    border: solid .08px var(--colordot-color);
+    width: 6.8px;
+    height: 6.8px;
+    margin-left: auto;
+    transform: rotate(45deg);
+    border-radius: 1.8px;
+    border-style: outset;
+    clip-path: polygon(10% 0%, 100% 0%, 100% 90%, 90% 100%, 0% 100%, 0% 10%)
+  }
+
+  .toast-copy svg:nth-child(3)
+  {
+    margin-left: auto;
+  }
+
+ .code-view
+  {
+    background-color: var(--primary-color);
+    border: solid 1px #1f181854;
+    position: absolute;
+    width: 198px;
+    height: 340px;
+    padding: 8px 15px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+  }
+
+
+  .code-view button svg
+  {
+    stroke: #14161f;
+  }
+  .code-view .main-tab
+  {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0px;
+    align-items: center;
+  }
+
+  .code-view .main-view
+  {
+    background-color: var(--fieldset-color);
+    height: 74%;
+    padding: .8rem;
+    border-radius: 14px;
+    border: solid .4px var(--fieldsetboarder-color);
+    scrollbar-color: transparent transparent;
+  }
+
+  #btnAdd
+  {
+    background-color: #9C9DA2;
+    width: 25%;
+    border: none;
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+    background-color: #9C9DA2;
+  }
+
+  .btnClose svg
+  {
+    stroke: var(--icon-color)
+  }
+  
+  @keyframes toastSlideUp {
+     0% {
+    -webkit-transform: translateY(0);
+            transform: translateY(0);
+  }
+  100% {
+    -webkit-transform: translateY(-130px);
+            transform: translateY(-130px);
+  }
+  }
+
+  @keyframes slide-bottom {
+  0% {
+    -webkit-transform: translateY(-130px);
+            transform: translateY(-130px);
+  }
+  100% {
+    -webkit-transform: translateY(100px);
+            transform: translateY(100px);
+            display: none;
+  }
+}
+  @keyframes coverLogoSlideUp {
+    0% {}
+    100%{transform: translateY(-1000px); opacity: 0; display: none;}
+  }
+
+  @keyframes backDropFadeIn {
+    0% {backdrop-filter: blur(0px);}   
+    100% { backdrop-filter: blur(3px);
+      }
+  }
+
+  .cover
+  {
+    background-color: rgb(255, 255, 255);
+    width: 100%;
+    position: absolute;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: coverLogoSlideUp 1s 1.8s forwards ease-in-out ;
+    flex-direction: column;
+    gap: .8rem;
+    color: transparent;
+    font-weight: 500;
+    font-style: italic;
+  }
+  
+  .cover img
+  {
+    width: 120px;
+    height: 120px;
+    border-radius: 40px;
+  }
+
+  .back-drop
+  {
+    background: rgba(0, 0, 0, 0.2); display: none; width: 100%; position: absolute; 
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(14, 12, 12, 0.726);
+    height: 100vh;
+    animation: backDropFadeIn .8s .4ms forwards ease-in-out;
+  }
+  
+  .btnCopy
+  {
+    margin-left: 0;
+    position: fixed;
+    left: 165;
+    bottom: 30px;
+    background-color: #14161f;
+    border-radius: 100%;
+    width: 40;
+    height: 40;
+  }
+
+  .btnClose
+  {
+    background-color: transparent;
+  }
+
+  .css-export-name
+  {
+    text-transform: capitalize;
+  }
+</style>
+
+<body>
+  
+<div class="cover"><img src="data:image/png;base64,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" alt="">
+</div>
+
+
+<form action="">
+  <div class="main-container">
+    <div class="setHexNameValue">
+      <div class="field-1">
+
+        <div class="hex-field">
+          
+          <label for="valueHexField">Hex code</label>
+          
+          <div style="display: flex; align-items: center; justify-content: center;     margin-top: .2rem
+">
+                <input type="text" name="valueHexField" id="hexField">
+                <button id="btnAdd">
+                  
+                    <svg width="22.4" height="22.4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 12H12M12 12H18M12 12V18M12 12V6" stroke="var(--icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+
+                </button>
+
+          </div>
+        </div>
+        
+        <div class="helper-tip">
+
+          <p>Color code starts with a `#` & < 7 characters
+          </p>
+
+        </div>
+
+      </div>
+    
+      <div class="field-2">
+
+        <div class="color-field">
+       
+            <label for="colorNameField">Color name</label>
+               <div>
+            
+                  <input type="text" name="colorNameField" id="nameField">
+      
+              </div>
+          </div>
+          <div class="helper-tip">
+            <p style="margin-bottom: 14px;">
+               Give color an alias to organize
+            </p>
+           
+          </div>
+     
+
+      </div>
+   
+     
+    
+    </div>
+
+  
+
+      <div style="display: flex; justify-content: space-between;">
+        <p class="paletteHead">Palette</p>
+        <p class="count-palettes">[ <span>0</span> ]</p>
+      </div>
+   
+      <div class="hex-to-be-paleted">
+        
+
+      </div>
+
+    <button id="btnClear" class="btnClear">Clear</button>
+   <div class="options-check">
+
+
+    <label for="cssExportSelect">Export CSS</label>
+    <select name="cssexport" id="cssExportSelect">
+      <option value="none">None</option>
+      <option value="vanilla">VanillaCSS</option>
+      <option value="sass">SASS</option>
+      <option value="tailwind">Tailwind</option>
+      <option value="tailwindv4">TailwindV4</option>
+      <option value="all">All</option>
+    </select>
+
+          <div class="helper-tip">
+            <p style="margin-bottom: 0rem;">
+             Export palettes for CSS
+            </p>
+           
+          </div>
+
+    <label for="paletteStylingSelect" style="margin-top: 18px;">Palette styling</label>
+    <select name="paleteeStyling" id="paletteStylingSelect" style="height: 34px; padding: 2px 7px;">
+      <option value="none">None</option>
+      <option value="hex">Hex</option>
+      <option value="name">Name</option>
+      <option value="both">Both</option>
+    </select>
+
+      <div class="helper-tip">
+            <p style="margin-bottom: .6rem;">
+             Include name or hex code in palette creation
+            </p>
+           
+          </div>
+        <div class="btnGroup" style="display: flex;  gap: 14px; align-items: center;">
+          <div class="toast-copy" style="display: none;">
+            
+            <div class="state-symbol">
+
+              <svg width="18" height="18" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.75 6L6.75 9L5.25 7.5M7.5 14.25C3.77208 14.25 0.75 11.2279 0.75 7.5C0.75 3.77208 3.77208 0.75 7.5 0.75C11.2279 0.75 14.25 3.77208 14.25 7.5C14.25 11.2279 11.2279 14.25 7.5 14.25Z" stroke="#4CB013" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+
+            </div>
+           
+
+            <p>CSS copied to clipboard! <span style="text-decoration: underline;">view</span></p>
+
+            
+            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8.99998 8.99998L6.00001 6.00001M6.00001 6.00001L3 3M6.00001 6.00001L9.00002 3M6.00001 6.00001L3 9.00002" stroke="#5A5A5A" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
+          </div>
+           <button type="submit" id="btnIniate" style="font-weight: 600; padding: 5px; height: 38;">Create</button>
+           
+           <button type="submit" id="btnExport">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M2.75 14C1.7835 14 1 13.2165 1 12.25L1 9.74998C1 9.33576 1.33579 8.99998 1.75 8.99998C2.16421 8.99998 2.5 9.33576 2.5 9.74998L2.5 12.25C2.5 12.388 2.61193 12.5 2.75 12.5H13.25C13.3881 12.5 13.5 12.388 13.5 12.25V9.74998C13.5 9.33576 13.8358 8.99998 14.25 8.99998C14.6642 8.99998 15 9.33576 15 9.74998V12.25C15 13.2165 14.2165 14 13.25 14H2.75Z" fill="var(--importicon-color)"/>
+              <path d="M7.25 7.68932L7.25 2C7.25 1.58579 7.58578 1.25 8 1.25C8.41421 1.25 8.75 1.58579 8.75 2L8.75 7.68932L10.7197 5.71965C11.0126 5.42675 11.4874 5.42675 11.7803 5.71965C12.0732 6.01254 12.0732 6.48741 11.7803 6.78031L8.53033 10.0303C8.23744 10.3232 7.76256 10.3232 7.46967 10.0303L4.21967 6.78031C3.92678 6.48741 3.92678 6.01254 4.21967 5.71965C4.51256 5.42675 4.98744 5.42675 5.28033 5.71965L7.25 7.68932Z" fill="var(--importicon-color)"/>
+              </svg>
+            
+              
+              </button>
+        </div>
+     
+
+    </div>
+  </div>
+</form>
+
+<div class="back-drop"></div>
+
+  <div class="code-view" style="display: none; line-height: 1;">
+
+        <div class="main-tab" style="padding-right: 0px;">
+
+          <h4 class="css-export-name"></h4>
+          <button class="btnClose">
+            
+          
+            <svg width="18" height="18" viewBox="0 0 24 24"  xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 18L12 12M12 12L6 6M12 12L18 6M12 12L6 18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
+
+          </button>
+
+        </div>
+
+         <div class="div" contenteditable="false" style="position: relative;">
+
+            <button class="btnCopy" id="btnCopied">
+            
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="pointer-events: none;">
+              <path d="M9 9V6.2002C9 5.08009 9 4.51962 9.21799 4.0918C9.40973 3.71547 9.71547 3.40973 10.0918 
+              3.21799C10.5196 3 11.0801 3 12.2002 3H17.8002C18.9203 3 19.4801 3 19.9079 3.21799C20.2842 3.40973 20.5905 
+              3.71547 20.7822 4.0918C21.0002 4.51962 21.0002 5.07967 21.0002 6.19978V11.7998C21.0002 12.9199 21.0002 13.48 
+              20.7822 13.9078C20.5905 14.2841 20.2839 14.5905 19.9076 14.7822C19.4802 15 18.921 15 17.8031 15H15M9 9H6.2002C5.08009 9 4.51962 9 
+              4.0918 9.21799C3.71547 9.40973 3.40973 9.71547 3.21799 10.0918C3 10.5196 3 11.0801 3 12.2002V17.8002C3 18.9203 3 19.4801 3.21799 
+              19.9079C3.40973 20.2842 3.71547 20.5905 4.0918 20.7822C4.5192 21 5.07899 21 6.19691 21H11.8036C12.9215 21 13.4805 21 13.9079 20.7822C14.2842 
+              20.5905 14.5905 20.2839 14.7822 19.9076C15 19.4802 15 18.921 15 17.8031V15M9 9H11.8002C12.9203 9 13.4801 9 13.9079 9.21799C14.2842 9.40973 14.5905 9.71547 14.7822
+              10.0918C15 10.5192 15 11.079 15 12.1969L15 15" stroke="var(--icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
+          </button>
+
+          </div>  
+        <div class="main-view" contenteditable="true" style="overflow-y: scroll; font-size: .72rem;  white-space: pre-wrap; " spellcheck="false" >
+         
+        </div>
+  </div>
+
+</body>
+<script>
+  
+
+  // UI refs
+  
+  const root = document.querySelector(".main-container");
+  const hexValueField = document.getElementById("hexField");
+  const nameValueField = document.getElementById("nameField");
+  const hexContainer = document.querySelector(".hex-to-be-paleted");
+  const countSpan = document.querySelector(".count-palettes span");
+
+  const cssExportSelect = document.getElementById("cssExportSelect");
+  const paletteStylingSelect = document.getElementById("paletteStylingSelect");
+  const btn = document.getElementById('btnIniate'); //Createbtn
+  const modalCopyWrapper = document.querySelector('.code-view')
+
+  // internal state
+  const colorPaletteObjects = [];
+
+  //initial states:
+  uiBtnState(colorPaletteObjects);
+  updateCount();
+  
+
+
+  
+  // Validator
+  
+  function normalizeHex(input) {
+
+  const raw = (input ?? "").trim();
+  if (!raw) return null;
+
+  // add # if missing
+  const hex = (raw.startsWith("#") ? raw : `#${raw}`).toUpperCase();
+
+  // validate: either #RGB or #RRGGBB
+  const HEX_REGEX = /^#([0-9A-F]{3}|[0-9A-F]{6})$/;
+  return HEX_REGEX.test(hex) ? hex : null;
+
+  }
+  
+
+  // Counter
+  function updateCount() {
+
+    if (countSpan && colorPaletteObjects.length > 0) {
+
+
+        countSpan.textContent = String(colorPaletteObjects.length);
+        countSpan.style.color = "green"
+
+    } else {
+
+        countSpan.textContent = String(colorPaletteObjects.length);
+        countSpan.style.color = "red"
+
+    }
+    
+    
+  }
+
+  //Hex id
+  function makeId() {
+
+    return String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+  }
+
+  //Item row
+  function renderPaletteItem(item) {
+    const row = document.createElement("div");
+    row.className = "currentHexRow";
+    row.dataset.id = item.id;
+
+    const textWrap = document.createElement("div");
+    textWrap.className = "hexTextWrap";
+
+    const hexEl = document.createElement("div");
+    hexEl.className = "hexBlock";
+    hexEl.textContent = item.hexCode;
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "hexName";
+    nameEl.textContent = item.hexName || "";
+
+    textWrap.appendChild(hexEl);
+    if (item.hexName) textWrap.appendChild(nameEl); //if hexName is given append to parent textwrap
+
+    const colorDot = document.createElement("div");
+    colorDot.className = "colorDot";
+    colorDot.style.backgroundColor = item.hexCode;
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "deleteBtn";
+    delBtn.dataset.action = "delete";
+    delBtn.dataset.id = item.id;
+    delBtn.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3.5 3.5H11.6666M6.4166 1.75H7.5833M4.6666 3.5V10.3851C4.6666 11.0373 4.6666 11.3634 4.7936 11.6128C4.9055 11.8323 5.0844 12.0111 5.304 12.123C5.5533 12.25 5.8794 12.25 6.5316 12.25H8.4683C9.1205 12.25 9.4466 12.25 9.6959 12.123C9.9155 12.0111 10.0944 11.8323 10.2063 11.6128C10.3333 11.3634 10.3333 11.0373 10.3333 10.3851V3.5"
+          stroke="#D94B4B" stroke-width="1.24" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+
+    row.appendChild(textWrap);
+    row.appendChild(colorDot);
+    row.appendChild(delBtn);
+
+    
+    if (hexContainer.firstChild) hexContainer.insertBefore(row, hexContainer.firstChild);
+    else hexContainer.appendChild(row);
+
+  }
+
+  // Pushing in array
+  function addColor() {
+
+    const normalized = normalizeHex(hexValueField.value);
+    const value = hexValueField.value
+
+      if (!normalized){
+          const btnAdd = document.getElementById("btnAdd");
+          btnAdd.style.backgroundColor = "#9C9DA2"
+          btnAdd.style.cursor = 'not-allowed'
+
+          setTimeout(()=>{
+
+          uiBtnState(colorPaletteObjects)
+          btnAdd.style.cursor = 'auto'
+
+          }, 2000)
+          toastInfo("forbidden", "Invalid, Use RGB or RRGGBB");
+          
+          return
+      }
+
+      const hexName = (nameValueField.value || "").trim();
+      const item = {
+        id: makeId(),
+        hexCode: normalized,
+        hexName: hexName || null,
+      };
+    
+      colorPaletteObjects.unshift(item);
+      renderPaletteItem(item);
+      hexValueField.value = "";
+      nameValueField.value = "";
+      updateCount();
+      // uiBtnState(colorPaletteObjects)
+      return colorPaletteObjects;
+  }
+
+  // Deleting palette
+  function deleteColorById(id) {
+    const idx = colorPaletteObjects.findIndex(c => c.id === id);
+    if (idx === -1) return;
+
+    colorPaletteObjects.splice(idx, 1);
+    const row = hexContainer.querySelector(`[data-id="${CSS.escape(id)}"]`);
+    if (row) row.remove();
+
+    uiBtnState(colorPaletteObjects)
+    updateCount();
+  }
+
+  // Palette render options
+  function getPaletteStylingOptions() {
+  const v = (paletteStylingSelect?.value || "none").toLowerCase();
+
+
+      switch (v) {
+      
+      case "hex":
+        return { optionHex: true, optionName: false, optionNone: false };
+
+      case "name":
+        return { optionHex: false, optionName: true, optionNone: false };
+
+      case "both":
+        return { optionHex: true, optionName: true, optionNone: false };
+        
+      default:
+        return { optionHex: false, optionName: false, optionNone: true };
+      }
+
+        return { optionHex: false, optionName: false, optionNone: true };
+
+
+}
+
+  // Sending msg to logic
+  function postCreate() {
+  const { optionHex, optionName, optionNone } = getPaletteStylingOptions();
+  const exportOpts = optionCSSExports();
+
+
+  if (!colorPaletteObjects || colorPaletteObjects.length === 0) {
+    toastInfo("forbidden", "Add at least 1 color first.");
+    return;
+  }
+
+  parent.postMessage(
+    {
+      pluginMessage: {
+        type: "create-from-ui",
+        colorPaletteObjects,
+        optionHex,
+        optionName,
+        optionNone,
+        exportOpts,
+        // cssExport: optionCSSExports(),
+        
+      },
+    },
+    "*"
+  );
+
+}
+
+
+  function postCreateLocalStyles(){
+
+  const { optionHex, optionName, optionNone } = getPaletteStylingOptions();
+  const exportOpts = optionCSSExports();
+
+  parent.postMessage({
+    pluginMessage: {
+      type: "create-from-local-styles",
+      optionHex,
+      optionName,
+      optionNone,
+      exportOpts,
+      colorPaletteObjects,
+
+    },
+
+
+}, "*")
+
+}
+
+  //UI States
+  function toastInfo(boolean, msg){
+
+    const toastMsg = document.querySelector('.toast-copy')
+    toastMsg.style.animationName = "toastSlideUp"
+
+    const btnRemoveToast = toastMsg.querySelectorAll('svg')[1];
+    btnRemoveToast.addEventListener('click', ()=> {
+    toastMsg.style.animationName = "slide-bottom"
+    // toastMsg.style.display = 'none'
+    })
+
+    boolean ? toastMsg.dataset.toastInfo = "success" : toastMsg.dataset.toastInfo = 'fail';
+    if (boolean === 'forbidden') toastMsg.dataset.toastInfo = 'forbidden';
+
+    if(toastMsg.dataset.toastInfo === "success"){
+
+      toastMsg.querySelector('p').innerText = msg;
+      toastMsg.style.display = 'block'
+    
+
+    } else if (toastMsg.dataset.toastInfo === 'fail') {
+
+      toastMsg.querySelector(".state-symbol").innerHTML = `
+      
+       
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 8.4502V12.4502M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 
+        7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 15.4502V15.5502L11.9502 15.5498V15.4502H12.0498Z" 
+        stroke="#BA8E23" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+
+
+      `
+      toastMsg.querySelector('p').innerText = msg;
+      toastMsg.style.display = ''
+
+    } else if (toastMsg.dataset.toastInfo === 'forbidden') {
+
+      toastMsg.querySelector(".state-symbol").innerHTML = `
+      
+      
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 8.4502V12.4502M12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 
+      7.02944 21 12C21 16.9706 16.9706 21 12 21ZM12.0498 15.4502V15.5502L11.9502 15.5498V15.4502H12.0498Z" 
+      stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+
+      `
+      toastMsg.querySelector('p').innerText = msg;
+      toastMsg.style.display = ''
+   
+    }
+   
+    return toastMsg
+  }
+ 
+
+  function uiBtnState(colorPaletteObjects){
+
+      const hexAddBtnState = () => {
+
+        if (!hexValueField.value){
+
+            document.getElementById("btnAdd")
+            .style.backgroundColor = '#9C9DA2'
+
+            } else { document.getElementById("btnAdd")
+                    .style.backgroundColor = 'var(--btnprimary-color)' }
+
+      }
+
+      const createBtnState = () => {
+
+        if (colorPaletteObjects.length === 0){
+
+              btn.style.backgroundColor = '#9C9DA2'
+              btn.style.cursor = 'not-allowed'
+            }
+
+        if (colorPaletteObjects.length !== 0){
+
+              btn.style.backgroundColor = 'var(--btnprimary-color)'
+              btn.style.cursor = 'auto'
+            }
+
+
+
+      }
+
+      createBtnState();
+      hexAddBtnState();
+
+    
+      hexValueField.addEventListener("input", ()=> {
+        hexAddBtnState();
+      })
+
+  }
+
+
+  // Events 
+  root.addEventListener("click", (e) => {
+    const target = e.target.closest("button");
+    const toast = document.querySelector(".toast-copy");
+
+    if (!target) return;
+
+    if (target.id === "btnAdd") {
+      e.preventDefault();
+      addColor();
+      uiBtnState(colorPaletteObjects)
+  
+      return;
+    }
+
+    if (target.id === "btnIniate" || target.id === "btnInitiate") {
+      e.preventDefault();
+      postCreate();
+      return;
+    }
+
+    if (target.dataset.action === "delete") {
+      e.preventDefault();
+      deleteColorById(target.dataset.id);
+      return;
+    }
+
+    if(target.id === "btnExport"){
+      e.preventDefault()
+      postCreateLocalStyles()
+    }
+
+    if(target.id === "btnClear"){
+
+      e.preventDefault()
+
+      if(!colorPaletteObjects.length) toastInfo(false, "Nothing left to clear")
+      colorPaletteObjects.splice(0, colorPaletteObjects.length)
+      updateCount()
+      uiBtnState(colorPaletteObjects)
+      hexContainer.innerHTML = ""
+
+    }
+  });
+
+  modalCopyWrapper.addEventListener("click", (e)=> {
+
+    let successMsg
+    
+    if(e.target.closest(".btnClose") ){
+       
+      modalCopyWrapper.style.display = 'none'
+      document.querySelector('.back-drop').style.display = 'none'
+      document.querySelector(".toast-copy").style.display = 'none'
+    }
+
+    if(e.target.closest(".btnCopy")){
+
+      successMsg = toastInfo(true, "Copied to clipboard")
+      successMsg.style.position = "absolute"
+      successMsg.style.display = 'flex'
+      successMsg.style.zIndex = 1;
+      const view = document.querySelector(".main-view")
+      navigator.clipboard.writeText(view.textContent)
+    }
+  })
+  
+  hexValueField.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addColor();
+      uiBtnState(colorPaletteObjects)
+    }
+  });
+
+
+  window.onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (!msg) return;
+
+  if (msg.type === "exports-ready") {
+    handleExportsReady(msg.exports);
+  }
+
+  if(msg.type === 'localStyles-ready'){
+
+    event.preventDefault()
+    getLocalStyles(msg)
+    uiBtnState(colorPaletteObjects)
+
+  }
+};
+
+
+  function getLocalStyles(msg){
+
+    const colors = msg.local
+    if(!colors.length) toastInfo(false, "Nothing to export")
+    if (!hexContainer.children) hexContainer.innerHTML = ""  //if exprt btn was clicked first
+
+    for (const incoming of colors) {
+          const exists = colorPaletteObjects.some(
+          c => c.hexCode.toUpperCase() === incoming.hexCode.toUpperCase()
+           );
+
+ if (!exists) {
+
+      const withId = {
+        ...incoming,
+        id: incoming.id ?? makeId(),
+      };
+
+      colorPaletteObjects.push(withId);
+
+      renderPaletteItem(withId);
+    
+    }
+  }
+
+  updateCount();
+  return colorPaletteObjects;
+  }
+
+  function optionCSSExports(){
+    
+    const v = (cssExportSelect.value || "none").toLowerCase(); //v2 will use an object lookup
+
+    switch (v) {
+      
+      case "vanilla":
+        return { cssVars: true, scssVars: false, tailwindRgbRefs: false, tailwindv4Vars: false };
+      case "sass":
+        return { cssVars: false, scssVars: true, tailwindRgbRefs: false, tailwindv4Vars: false };
+      case "tailwind":
+        return { cssVars: false, scssVars: false, tailwindRgbRefs: true, tailwindv4Vars: false };
+      case "tailwindv4":
+        return { cssVars: false, scssVars: false, tailwindRgbRefs: false, tailwindv4Vars: true}
+      case "all":
+        return { cssVars: true, scssVars: true, tailwindRgbRefs: true, tailwindv4Vars: true };
+      default:
+        return { cssVars: false, scssVars: false, tailwindRgbRefs: false, tailwindv4Vars: false };
+      }
+
+        return {cssVars: false, scssVars: false, tailwindRgbRefs: false,  tailwindv4Vars: false};
+
+      }
+
+  function handleExportsReady(exports) {
+
+  // picking which export to show based on dropdown
+  const v = (cssExportSelect.value || "none").toLowerCase();
+
+  let text = "";
+
+  if (v === "vanilla" && exports.cssVars) {
+    text = exports.cssVars.join("\n");
+  }
+
+  if (v === "sass" && exports.scssVars) {
+    text = exports.scssVars.join("\n");
+  }
+
+  if (v === "tailwind" && exports.tailwindRgbRefs) {
+    text = exports.tailwindRgbRefs.join(",\n");
+  }
+
+  if(v === "tailwindv4" && exports.tailwindv4Vars){
+    text = exports.tailwindv4Vars.join(`\n`)
+  }
+
+  if(v === "none"){
+    return
+  }
+
+  if (v === "all") {
+    text = [
+      "/* CSS */",
+      ...(exports.cssVars || []),
+      "",
+      "/* SCSS */",
+      ...(exports.scssVars || []),
+      "",
+      "/* Tailwind */",
+      ...(exports.tailwindRgbRefs || []),
+      "",
+      "/* Tailwind v4*/",
+      ...(exports.tailwindv4Vars || []),
+      ""
+    ].join("\n");
+  }
+
+  // injecting into modal
+  const view = document.querySelector(".main-view");
+  view.textContent = text;
+  const css = document.querySelector(".css-export-name")
+  const cssType = v
+  css.textContent = cssType 
+  // show modal + backdrop
+  document.querySelector(".code-view").style.display = "block";
+  document.querySelector(".back-drop").style.display = "block";
+ 
+}
+
+ 
+</script>
+
