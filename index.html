@@ -1,16 +1,906 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0;url=VisualBuilder/visualbuilder.html">
-    <title>Visual Builder</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sign in — Kadysoft</title>
+
+<meta name="description" content="Kadysoft · Eagle Softwares — Secure sign in">
+<meta name="theme-color" content="#0a0e16">
+<link rel="manifest" href="">
+<link rel="icon" href="eagle.png">
+<link rel="apple-touch-icon" href="eagle.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --brand: #ff2e63;
+  --brand-2: #ff7a45;
+  --brand-glow: rgba(255, 46, 99, 0.45);
+  --ok: #22c55e;
+  --err: #ef4444;
+  --warn: #f59e0b;
+  --bg: #0a0e16;
+  --card: rgba(255, 255, 255, 0.055);
+  --stroke: rgba(255, 255, 255, 0.11);
+  --txt: #eef2ff;
+  --muted: #8b9bb8;
+  --r: 20px;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f0f4fb;
+    --card: rgba(255, 255, 255, 0.82);
+    --stroke: rgba(15, 23, 42, 0.09);
+    --txt: #0f172a;
+    --muted: #5b6b8c;
+    --shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body { height: 100%; }
+html { overscroll-behavior-y: none; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  position: relative;
+  isolation: isolate;
+  overscroll-behavior-y: none;
+}
+
+/* ===== Animated background ===== */
+#bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+
+.blob {
+  position: fixed;
+  width: 48vmax;
+  height: 48vmax;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.38;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.b1 {
+  background: var(--brand);
+  top: -16vmax;
+  right: -18vmax;
+  animation: float1 18s ease-in-out infinite;
+}
+
+.b2 {
+  background: #6d28d9;
+  bottom: -20vmax;
+  left: -16vmax;
+  animation: float2 22s ease-in-out infinite;
+}
+
+.b3 {
+  background: var(--brand-2);
+  top: 34%;
+  left: 42%;
+  animation: float3 26s ease-in-out infinite;
+  opacity: 0.24;
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-8vmax, 10vmax) scale(1.12); }
+}
+@keyframes float2 {
+  0%, 100% { transform: translate(0, 0) scale(1.04); }
+  50% { transform: translate(9vmax, -8vmax) scale(0.9); }
+}
+@keyframes float3 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-11vmax, -7vmax); }
+}
+
+/* ===== Logo ===== */
+.logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  object-fit: cover;
+  border: 2.5px solid rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 0 0 1px rgba(255, 46, 99, 0.15),
+    0 16px 40px var(--brand-glow);
+  animation: breathe 4.8s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.035); }
+}
+
+.logo-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ===== Card ===== */
+.card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--card);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r);
+  padding: 26px 20px 20px;
+  box-shadow: var(--shadow);
+  animation: rise 0.55s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+.brand-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.brand-top h1 {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.brand-top p {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.45;
+}
+
+/* ===== Fields ===== */
+.field {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0 2px 6px;
+  letter-spacing: 0.01em;
+}
+
+.control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.control .ic {
+  position: absolute;
+  left: 13px;
+  font-size: 14px;
+  color: var(--muted);
+  pointer-events: none;
+  transition: color 0.25s;
+}
+
+.control input {
+  width: 100%;
+  padding: 12.5px 14px 12.5px 40px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1.5px solid var(--stroke);
+  border-radius: 13px;
+  color: var(--txt);
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+}
+
+@media (prefers-color-scheme: light) {
+  .control input { background: rgba(255, 255, 255, 0.9); }
+}
+
+.control input::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+  font-weight: 400;
+}
+
+.control input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3.5px rgba(255, 46, 99, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.control:focus-within .ic { color: var(--brand); }
+
+.control input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.eye {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 8px;
+  border-radius: 9px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.eye:hover {
+  color: var(--brand);
+  background: rgba(255, 46, 99, 0.08);
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--warn);
+  min-height: 14px;
+  margin: 6px 2px 0;
+  display: block;
+}
+
+/* ===== Remember ===== */
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 2px 6px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+  user-select: none;
+}
+
+.remember input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.remember .box {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1.6px solid var(--stroke);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: 0.2s;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.remember .box i {
+  font-size: 9.5px;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: 0.2s;
+}
+
+.remember input:checked + .box {
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(255, 46, 99, 0.35);
+}
+
+.remember input:checked + .box i {
+  opacity: 1;
+  transform: none;
+}
+
+.remember:hover .box { border-color: var(--brand); }
+
+.remember input:focus-visible + .box {
+  box-shadow: 0 0 0 3px rgba(255, 46, 99, 0.22);
+}
+
+/* ===== Button ===== */
+.btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 13.5px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(255, 46, 99, 0.38);
+  transition: transform 0.18s, box-shadow 0.25s, filter 0.25s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  letter-spacing: 0.01em;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(255, 46, 99, 0.5);
+}
+
+.btn:hover:not(:disabled)::before { opacity: 1; }
+
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.5) brightness(0.85);
+  box-shadow: none;
+}
+
+.btn .spin {
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Messages ===== */
+.msg {
+  margin-top: 14px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1.55;
+}
+
+.msg.show {
+  display: flex;
+  animation: pop 0.3s ease both;
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+
+.msg.ok {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.msg.err {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.msg.wait {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.msg.info {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.shake {
+  animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-7px); }
+  40%, 60% { transform: translateX(7px); }
+}
+
+/* ===== Footer ===== */
+footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.85;
+  width: 100%;
+  max-width: 340px;
+}
+
+footer a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+footer a:hover { text-decoration: underline; }
+
+.support {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-weight: 700;
+  font-size: 12.5px;
+  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.32);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.support:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(37, 211, 102, 0.4);
+}
+
+.support:active { transform: scale(0.96); }
+
+/* ===== Toast ===== */
+#toast {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(14px + env(safe-area-inset-top));
+  margin: auto;
+  width: max-content;
+  max-width: 90vw;
+  z-index: 999;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: rgba(18, 22, 34, 0.94);
+  color: #fff;
+  border: 1px solid var(--stroke);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(-16px);
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: none;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 360px) {
+  .logo { width: 72px; height: 72px; border-radius: 20px; }
+  .card { padding: 20px 16px 16px; border-radius: 18px; }
+  .brand-top h1 { font-size: 18px; }
+  .control input { padding: 11px 40px 11px 38px; font-size: 13.5px; }
+  .btn { padding: 12px; font-size: 14.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
 </head>
+
 <body>
-    <script>
-        window.location.replace("dist/visualbuilder.html");
-    </script>
-    <a href="dist/visualbuilder.html">Open Eagle Visual Builder</a>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="blob b1" aria-hidden="true"></div>
+<div class="blob b2" aria-hidden="true"></div>
+<div class="blob b3" aria-hidden="true"></div>
+
+<div class="logo-wrap">
+  <img src="eagle.png" alt="Kadysoft" class="logo" width="84" height="84">
+  <span class="logo-label">Eagle Softwares</span>
+</div>
+
+<main class="card">
+  <div class="brand-top">
+    <h1 data-i18n="login.title"></h1>
+    <p data-i18n="login.sub"></p>
+  </div>
+
+  <form id="loginForm" novalidate>
+    <div class="field">
+      <label for="name" data-i18n="login.name"></label>
+      <div class="control">
+        <span class="ic"><i class="fas fa-user"></i></span>
+        <input id="name" name="name" type="text" placeholder=""
+               data-i18n-ph="login.name.ph"
+               autocomplete="name" autocapitalize="words" spellcheck="false" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="code" data-i18n="login.code"></label>
+      <div class="control">
+        <span class="ic"><i class="fas fa-mobile-alt"></i></span>
+        <input id="code" name="code" type="tel" inputmode="tel" placeholder=""
+               data-i18n-ph="login.code.ph"
+               autocomplete="tel" spellcheck="false" required>
+      </div>
+      <span class="hint" id="caps"></span>
+    </div>
+
+    <label class="remember" for="remember">
+      <input type="checkbox" id="remember" checked>
+      <span class="box"><i class="fas fa-check"></i></span>
+      <span data-i18n="login.remember"></span>
+    </label>
+
+    <button type="submit" class="btn" id="btn">
+      <span id="btnText" data-i18n="login.submit"></span>
+    </button>
+  </form>
+
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+</main>
+
+<footer>
+  &copy; <span id="yr"></span> <a href="#" data-ext="https://facebook.com/kadinioo">Ahmed Elkady — Kadysoft Ltd.</a><br>
+  <a href="#" class="support" data-ext="https://wa.me/201555266002">
+    <i class="fab fa-whatsapp"></i>
+    <span data-i18n="support.whatsapp"></span>
+  </a>
+</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="./core.js"></script>
+<script>
+/* =====================================================================
+   API — Google Apps Script
+   ===================================================================== */
+const API_BASE =
+  "https://script.google.com/macros/s/AKfycbxvZBEd5BtXmEWOeJj1lScwFBwqg8_A-T-UsRs-M66P-c-f5AiygnSGH_FZ4z4T1_An4w/exec";
+
+const TARGET_PAGE = "./index2.html";
+
+const $ = s => document.querySelector(s);
+const el = {
+  form: $('#loginForm'), name: $('#name'), code: $('#code'),
+  btn: $('#btn'), btnText: $('#btnText'), msg: $('#msg'),
+  caps: $('#caps'), toast: $('#toast'),
+  remember: $('#remember')
+};
+
+/* ---------- Language (EN only) ---------- */
+I18n.init();
+mountLangSwitch('#langBtn', () => {}); // no-op, button hidden
+
+function applyStaticText() {
+  document.title = I18n.t('login.title') + ' — ' + I18n.t('brand');
+  if (el.caps.textContent) checkCaps({ getModifierState: () => false });
+}
+function paintBtn() {
+  el.btnText.textContent = I18n.t('login.submit');
+}
+applyStaticText();
+paintBtn();
+
+/* ---------- Single request with timeout + retry ---------- */
+async function apiCall(action, name, code, { retries = 2 } = {}) {
+  const url = `${API_BASE}?action=${encodeURIComponent(action)}`
+            + `&name=${encodeURIComponent(name)}`
+            + `&code=${encodeURIComponent(code)}`;
+
+  for (let i = 0; i <= retries; i++) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    try {
+      const res = await fetch(url, { method: 'GET', signal: ctl.signal, redirect: 'follow', cache: 'no-store' });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(I18n.t('login.http') + ' ' + res.status);
+      const data = await res.json();
+      if (typeof data !== 'object' || data === null) throw new Error(I18n.t('login.err.badJson'));
+      return data;
+    } catch (err) {
+      clearTimeout(timer);
+      if (err.name === 'AbortError') throw new Error(I18n.t('login.err.timeout'));
+      if (i === retries) throw new Error(I18n.t('login.err.net'));
+      await sleep(700 * (i + 1));
+    }
+  }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ---------- Messages ---------- */
+const ICONS = { ok: '✅', err: '⚠️', wait: '⏳', info: 'ℹ️' };
+
+function cleanText(t) {
+  return String(t == null ? '' : t)
+    .replace(/https?:\/\/\S+/gi, '')
+    .replace(/\b(TypeError|ReferenceError|SyntaxError|NetworkError)\b\s*[—:-]?\s*/gi, '')
+    .replace(/\b\d{4}-\d{2}-\d{2}\b/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+function showMsg(kind, text) {
+  const safe = kind === 'err' ? (cleanText(text) || I18n.t('login.err.net')) : text;
+  el.msg.className = 'msg ' + kind + ' show';
+  el.msg.innerHTML = `<span>${ICONS[kind] || ''}</span><span>${safe}</span>`;
+}
+function clearMsg() {
+  el.msg.className = 'msg';
+  el.msg.innerHTML = '';
+}
+function shake() {
+  el.msg.classList.remove('shake');
+  void el.msg.offsetWidth;
+  el.msg.classList.add('shake');
+}
+let toastT;
+function toast(text) {
+  el.toast.textContent = text;
+  el.toast.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.toast.classList.remove('show'), 2600);
+}
+
+function setLoading(on) {
+  el.btn.disabled = on;
+  el.name.disabled = on;
+  el.code.disabled = on;
+  el.btn.innerHTML = on
+    ? `<span class="spin"></span><span>${I18n.t('login.checking')}</span>`
+    : `<span id="btnText">${I18n.t('login.submit')}</span>`;
+}
+
+/* ---------- Mobile number: digits, +, spaces only ---------- */
+el.code.addEventListener('input', e => {
+  // keep digits, +, and spaces only
+  e.target.value = e.target.value.replace(/[^\d+\s]/g, '');
+  clearMsg();
+});
+el.name.addEventListener('input', clearMsg);
+
+/* ---------- Session ---------- */
+function saveSession(name, code) {
+  const keep = el.remember.checked;
+  if (keep) {
+    localStorage.setItem('ks.name', name);
+    localStorage.setItem('ks.code', code);
+    localStorage.setItem('ks.remember', '1');
+  } else {
+    localStorage.setItem('ks.name', name);
+    localStorage.removeItem('ks.code');
+    localStorage.setItem('ks.remember', '0');
+  }
+}
+function clearSession() {
+  localStorage.removeItem('ks.name');
+  localStorage.removeItem('ks.code');
+}
+el.remember.checked = localStorage.getItem('ks.remember') !== '0';
+
+/* ---------- Login logic ---------- */
+el.form.addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const name = el.name.value.trim();
+  const code = el.code.value.trim();
+
+  if (!name)          { showMsg('err', I18n.t('login.err.nameReq')); el.name.focus(); shake(); return; }
+  if (name.length < 2){ showMsg('err', I18n.t('login.err.nameShort')); el.name.focus(); shake(); return; }
+  if (!code)          { showMsg('err', I18n.t('login.err.codeReq')); el.code.focus(); shake(); return; }
+  // strip spaces for validation / storage
+  const mobile = code.replace(/\s+/g, '');
+  if (mobile.length < 8) {
+    showMsg('err', 'Mobile number is too short');
+    el.code.focus();
+    shake();
+    return;
+  }
+
+  setLoading(true);
+  clearMsg();
+  showMsg('info', I18n.t('login.err.connecting'));
+
+  try {
+    const data = await apiCall('register', name, mobile);
+    applyResult(data);
+
+    if (String(data.status).toLowerCase() === 'yes') {
+      saveSession(name, mobile);
+      setTimeout(() => { location.href = TARGET_PAGE; }, 1100);
+    } else {
+      clearSession();
+    }
+  } catch (err) {
+    showMsg('err', err.message);
+    shake();
+  } finally {
+    setLoading(false);
+  }
+});
+
+function applyResult(data) {
+  if (data && data.success === false) {
+    showMsg('err', data.message || I18n.t('login.err.unknown'));
+    shake();
+    return;
+  }
+  const s = String((data && data.status) || '').toLowerCase();
+  if (s === 'yes')           showMsg('ok', '✅ ' + I18n.t('login.ok.approved'));
+  else if (s === 'no')       { showMsg('err', '❌ ' + I18n.t('login.err.rejected')); shake(); }
+  else if (s === 'pending')  showMsg('wait', '⏳ ' + I18n.t('login.wait.pending'));
+  else                       { showMsg('err', I18n.t('login.err.status')); shake(); }
+}
+
+/* ---------- Restore session ---------- */
+(function restore() {
+  $('#yr').textContent = new Date().getFullYear();
+  paintBtn();
+
+  const n = localStorage.getItem('ks.name');
+  if (n) el.name.value = n;
+
+  const c = localStorage.getItem('ks.code');
+  if (!n || !c) return;
+
+  el.code.value = c;
+
+  setLoading(true);
+  showMsg('info', I18n.t('login.err.restore'));
+
+  apiCall('check', n, c)
+    .then(data => {
+      applyResult(data);
+      if (data && String(data.status).toLowerCase() === 'yes') {
+        setTimeout(() => { location.href = TARGET_PAGE; }, 900);
+      } else {
+        clearSession();
+        el.code.value = '';
+      }
+    })
+    .catch(err => { showMsg('err', err.message); })
+    .finally(() => setLoading(false));
+})();
+
+/* ---------- Safe external links ---------- */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-ext]');
+  if (!a) return;
+  e.preventDefault();
+  const url = a.dataset.ext;
+  const isAndroidChrome = /Android/.test(navigator.userAgent) && /Chrome/.test(navigator.userAgent);
+  if (isAndroidChrome) {
+    location.href = 'intent://' + url.replace(/^https?:\/\//, '') +
+                    '#Intent;scheme=https;package=com.android.chrome;end;';
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+});
+
+/* ---------- Particle background ---------- */
+(function particles() {
+  const cv = document.getElementById('bg');
+  const ctx = cv.getContext('2d');
+  let w, h, dots = [];
+
+  function size() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = cv.width = innerWidth * dpr;
+    h = cv.height = innerHeight * dpr;
+    cv.style.width = innerWidth + 'px';
+    cv.style.height = innerHeight + 'px';
+    const count = Math.min(48, Math.round(innerWidth * innerHeight / 24000));
+    dots = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: (Math.random() * 1.6 + 0.6) * dpr,
+      v: (Math.random() * 0.2 + 0.06) * dpr
+    }));
+  }
+
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    for (const d of dots) {
+      d.y -= d.v;
+      if (d.y < -6) { d.y = h + 6; d.x = Math.random() * w; }
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(255,46,99,.5)';
+      ctx.shadowColor = 'rgba(255,46,99,.75)';
+      ctx.shadowBlur = 7;
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    requestAnimationFrame(frame);
+  }
+
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  size();
+  addEventListener('resize', size, { passive: true });
+  requestAnimationFrame(frame);
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
 </body>
 </html>
