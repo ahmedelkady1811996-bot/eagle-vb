@@ -122,6 +122,21 @@ button { cursor: pointer; border: 0; background: none; }
 
 #mainrow.no-palette { grid-template-columns: 0 0 1fr 4px var(--inspector-w); }
 #mainrow.no-right { grid-template-columns: var(--palette-w) 4px 1fr 0 0; }
+#mainrow.no-palette.no-right { grid-template-columns: 0 0 1fr 0 0; }
+#mainrow.no-palette > #palette, #mainrow.no-palette > #splitL,
+#mainrow.no-right > #inspector, #mainrow.no-right > #splitR { visibility: hidden; overflow: hidden; min-width: 0; }
+
+/* panel show / hide buttons (command bar) */
+.tb-btn--panel { border: 1px solid var(--line); color: var(--text-2); }
+.tb-btn--panel .pv-ic { width: 16px; height: 14px; flex-shrink: 0; }
+.tb-btn--panel .pv-ic rect.frame { fill: none; stroke: currentColor; stroke-width: 1.4; }
+.tb-btn--panel .pv-ic rect.side { fill: currentColor; opacity: .28; }
+.tb-btn--panel.is-on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.tb-btn--panel.is-on .pv-ic rect.side { opacity: .9; }
+.tb-btn--panel:not(.is-on) { background: transparent; }
+.tb-btn--panel:hover { border-color: var(--accent); }
+.tb-sep { width: 1px; height: 18px; background: var(--line); margin: 0 6px; flex-shrink: 0; }
+@media (max-width: 900px) { .tb-btn--panel .pv-lbl { display: none; } }
 
 .splitter { background: var(--line); cursor: col-resize; position: relative; transition: background var(--dur) var(--ease); }
 .splitter::after { content: ''; position: absolute; inset: 0 -4px; }
@@ -1777,6 +1792,15 @@ body.is-resizing-artboard-v * { cursor: ns-resize !important; }
     <div class="brand"><span class="brand__mark"></span><span>Eagle Visual Builder</span></div>
     <nav id="menus"></nav>
     <span class="spacer"></span>
+    <button class="tb-btn tb-btn--panel is-on" id="tbTogglePalette" type="button" title="Hide components panel" aria-pressed="true">
+      <svg class="pv-ic" viewBox="0 0 16 14" aria-hidden="true"><rect class="frame" x=".7" y=".7" width="14.6" height="12.6" rx="2"/><rect class="side" x="1.4" y="1.4" width="4.6" height="11.2" rx="1"/></svg>
+      <span class="pv-lbl">Components</span>
+    </button>
+    <button class="tb-btn tb-btn--panel is-on" id="tbToggleInspector" type="button" title="Hide properties panel" aria-pressed="true">
+      <svg class="pv-ic" viewBox="0 0 16 14" aria-hidden="true"><rect class="frame" x=".7" y=".7" width="14.6" height="12.6" rx="2"/><rect class="side" x="10" y="1.4" width="4.6" height="11.2" rx="1"/></svg>
+      <span class="pv-lbl">Properties</span>
+    </button>
+    <span class="tb-sep"></span>
     <button class="tb-btn" id="tbUndo" title="Undo (Ctrl+Z)">Undo</button>
     <button class="tb-btn" id="tbRedo" title="Redo (Ctrl+Shift+Z)">Redo</button>
     <button class="tb-btn tb-btn--icon" id="tbTheme" title="Toggle theme">◐</button>
@@ -26448,6 +26472,80 @@ if (document.readyState === 'loading') {
 
 })();
 
+</script>
+<script>
+/* Panel show / hide buttons: Components (left) and Properties (right). */
+(function () {
+  var KEY = 'vb_panel_visibility';
+  var row = document.getElementById('mainrow');
+  var bp = document.getElementById('tbTogglePalette');
+  var bi = document.getElementById('tbToggleInspector');
+  if (!row || !bp || !bi) return;
+  var st = { palette: true, inspector: true };
+  try { var o = JSON.parse(localStorage.getItem(KEY) || 'null'); if (o) { st.palette = o.palette !== false; st.inspector = o.inspector !== false; } } catch (e) {}
+  function apply(save) {
+    row.classList.toggle('no-palette', !st.palette);
+    row.classList.toggle('no-right', !st.inspector);
+    bp.classList.toggle('is-on', st.palette);
+    bi.classList.toggle('is-on', st.inspector);
+    bp.setAttribute('aria-pressed', String(st.palette));
+    bi.setAttribute('aria-pressed', String(st.inspector));
+    bp.title = st.palette ? 'Hide components panel' : 'Show components panel';
+    bi.title = st.inspector ? 'Hide properties panel' : 'Show properties panel';
+    if (save) { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+    setTimeout(function () { try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, 30);
+  }
+  bp.addEventListener('click', function () { st.palette = !st.palette; apply(true); });
+  bi.addEventListener('click', function () { st.inspector = !st.inspector; apply(true); });
+  apply(false);
+})();
+</script>
+<script>
+/* Edge tabs for Components (left) / Properties (right): always visible, glued to the panel edge. */
+(function () {
+  var row = document.getElementById('mainrow');
+  var hb = [document.getElementById('tbTogglePalette'), document.getElementById('tbToggleInspector')];
+  if (!row) return;
+  var css = document.createElement('style');
+  css.textContent = [
+    '.vb-et{position:fixed;top:30%;transform:translateY(-50%);z-index:900;width:24px;height:112px;display:flex;flex-direction:column;',
+    ' align-items:center;justify-content:center;gap:6px;padding:6px 0;cursor:pointer;user-select:none;font:600 11px inherit;font-family:inherit;',
+    ' letter-spacing:.3px;background:var(--panel-2);color:var(--accent);border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.25);',
+    ' transition:background .15s,color .15s,border-color .15s}',
+    '.vb-et svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}',
+    '.vb-et span{writing-mode:vertical-rl;white-space:nowrap}',
+    '.vb-et.l{left:0;border-left:none;border-radius:0 10px 10px 0}',
+    '.vb-et.r{right:0;border-right:none;border-radius:10px 0 0 10px}',
+    '.vb-et:hover{border-color:var(--accent);background:var(--accent-soft)}',
+    '.vb-et.off{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 14px var(--accent-soft)}',
+    '.vb-et.off:hover{filter:brightness(1.12);background:var(--accent)}',
+    '.vb-et:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px}',
+    '#app.is-preview ~ .vb-et{display:none}'
+  ].join('\n');
+  document.head.appendChild(css);
+  var L = '<svg viewBox="0 0 24 24"><polyline points="15 5 8 12 15 19"/></svg>';
+  var R = '<svg viewBox="0 0 24 24"><polyline points="9 5 16 12 9 19"/></svg>';
+  function mk(cls, label) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'vb-et ' + cls;
+    b.innerHTML = '<i></i><span>' + label + '</span>'; document.body.appendChild(b); return b;
+  }
+  var eL = mk('l', 'Components'), eR = mk('r', 'Properties');
+  function paint() {
+    var pOn = !row.classList.contains('no-palette'), iOn = !row.classList.contains('no-right');
+    eL.classList.toggle('off', !pOn); eR.classList.toggle('off', !iOn);
+    eL.firstChild.outerHTML = '<i>' + (pOn ? L : R) + '</i>';
+    eR.firstChild.outerHTML = '<i>' + (iOn ? R : L) + '</i>';
+    eL.title = pOn ? 'Hide components panel' : 'Show components panel';
+    eR.title = iOn ? 'Hide properties panel' : 'Show properties panel';
+    var p = document.getElementById('palette'), i = document.getElementById('inspector');
+    var pr = p && pOn ? p.getBoundingClientRect() : null, ir = i && iOn ? i.getBoundingClientRect() : null;
+    eL.style.left = (pr && pr.width > 0 ? Math.round(pr.right) : 0) + 'px';
+    eR.style.right = (ir && ir.width > 0 ? Math.round(window.innerWidth - ir.left) : 0) + 'px';
+  }
+  eL.onclick = function () { if (hb[0]) hb[0].click(); setTimeout(paint, 40); };
+  eR.onclick = function () { if (hb[1]) hb[1].click(); setTimeout(paint, 40); };
+  setInterval(paint, 150); window.addEventListener('resize', paint); paint();
+})();
 </script>
 </body>
 </html>
