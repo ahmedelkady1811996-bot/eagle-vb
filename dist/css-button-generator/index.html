@@ -1695,7 +1695,67 @@
       }
     }
   </style>
-  <style id="gen"></style>
+  <style id="gen">
+/* ===== MOBILE LAYER (Eagle) ===== */
+html { -webkit-text-size-adjust: 100%; }
+body { overscroll-behavior: none; }
+@media (max-width: 900px) {
+  header.app-header {
+    height: auto !important;
+    min-height: 52px;
+    flex-wrap: wrap;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+  }
+  .tagline, .hmeta { display: none !important; }
+  .presets {
+    top: auto !important;
+    position: sticky !important;
+    height: auto !important;
+    min-height: 44px;
+    padding: 8px 12px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .p-list { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .work {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+  }
+  .controls {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 14px 24px !important;
+    order: 2;
+  }
+  .side {
+    position: relative !important;
+    top: auto !important;
+    height: auto !important;
+    order: 1;
+    border-left: none !important;
+  }
+  .stage {
+    height: min(42vh, 320px) !important;
+    min-height: 240px !important;
+  }
+  .codepanel {
+    min-height: 220px;
+  }
+  .hbtn, .chip {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
+  /* touch-friendly inputs */
+  input[type="range"] { height: 28px; }
+  input[type="color"] { min-width: 40px; min-height: 40px; }
+  select, input[type="text"], input[type="number"] {
+    min-height: 40px;
+    font-size: 16px !important; /* prevent iOS zoom */
+  }
+}
+</style>
 </head>
 
 <body>
@@ -4284,10 +4344,28 @@
         return ok;
       }
     }
-    byId('copyCode').addEventListener('click', () => {
+    byId('copyCode').addEventListener('click', async () => {
       const f = FORMATS[curFmt];
-      copyText(f.gen(), `${f.label} COPIED TO CLIPBOARD`);
+      const text = f.gen();
+      const ok = await copyText(text, `${f.label} COPIED TO CLIPBOARD`);
+      // On Android WebView clipboard often fails — also offer file download
+      if (!ok && typeof window.__appSaveText === 'function') {
+        const ext = curFmt === 'tw' || curFmt === 'tailwind' ? 'txt' : (curFmt === 'html' ? 'html' : 'css');
+        window.__appSaveText('button.' + ext, text, 'text/plain;charset=utf-8');
+      }
     });
+    // Long-press / secondary: always download file if helper exists
+    if (byId('copyCode')) {
+      byId('copyCode').addEventListener('contextmenu', (e) => {
+        if (typeof window.__appSaveText !== 'function') return;
+        e.preventDefault();
+        const f = FORMATS[curFmt];
+        const text = f.gen();
+        const ext = curFmt === 'tw' || curFmt === 'tailwind' ? 'txt' : (curFmt === 'html' ? 'html' : 'css');
+        window.__appSaveText('button.' + ext, text, 'text/plain;charset=utf-8');
+        toast('DOWNLOAD STARTED');
+      });
+    }
     byId('copyLink').addEventListener('click', () => {
       doPersist();
       copyText(location.href, 'LINK COPIED TO CLIPBOARD');
@@ -4376,6 +4454,99 @@
       window.__BTNGEN__ = { S, applyState, genCSS, genTailwind, genHTMLVariants, contrastInfo, ICONS };
     }
   </script>
+<script>
+/* ===== Android-safe save/download (Eagle apps shared) ===== */
+(function () {
+  if (window.__appSaveBlob) return;
+  var UPLOAD_API = 'https://tmpfiles.org/api/v1/upload';
+  function directUrl(res) {
+    var d = (res && res.data) || {};
+    var u = d.url_download || d.url || '';
+    if (!u) return '';
+    try {
+      var p = new URL(u);
+      if (/(^|\.)tmpfiles\.org$/i.test(p.hostname) && !/\/dl\//i.test(p.pathname)) {
+        u = p.origin + '/dl' + p.pathname + p.search;
+      }
+    } catch (e) {}
+    return u;
+  }
+  function openDownload(url) {
+    if (/Android/i.test(navigator.userAgent) && /^https?:/i.test(url)) {
+      var intent = 'intent://' + url.replace(/^https?:\/\//, '') +
+        '#Intent;scheme=https;package=com.android.chrome;S.browserFallbackUri=' +
+        encodeURIComponent(url) + ';end';
+      var handed = false;
+      try { handed = !!window.open(intent, '_blank'); } catch (e) {}
+      setTimeout(function () {
+        if (!handed) { try { window.location.href = url; } catch (e2) {} }
+      }, 1200);
+      return;
+    }
+    var w = null;
+    try { w = window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) {}
+    if (!w) { try { window.location.href = url; } catch (e2) {} return; }
+    setTimeout(function () { try { w.close(); } catch (e3) {} }, 2500);
+  }
+  async function saveBlob(blob, filename) {
+    filename = filename || 'download.bin';
+    try {
+      var file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        return 'shared';
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return 'cancel';
+    }
+    try {
+      var fd = new FormData();
+      fd.append('file', blob, filename);
+      var res = await fetch(UPLOAD_API, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var out = await res.json();
+      var direct = directUrl(out);
+      if (!direct) throw new Error('no url');
+      openDownload(direct);
+      return 'upload';
+    } catch (e) {}
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      a.setAttribute('data-app-native-dl', '1');
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 60000);
+      return 'download';
+    } catch (e2) { return 'cancel'; }
+  }
+  window.__appSaveBlob = saveBlob;
+  window.__appSaveText = function (filename, text, mime) {
+    return saveBlob(new Blob([text == null ? '' : text], { type: mime || 'text/plain;charset=utf-8' }), filename);
+  };
+  window.__appOpenDownload = openDownload;
+  window.saveBlob = saveBlob;
+  document.addEventListener('click', function (e) {
+    try {
+      var a = e.target && e.target.closest ? e.target.closest('a[download]') : null;
+      if (!a || a.getAttribute('data-app-native-dl') === '1') return;
+      var href = a.href || '';
+      var name = a.getAttribute('download') || 'download';
+      if (!href || (href.indexOf('blob:') !== 0 && href.indexOf('data:') !== 0)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      fetch(href).then(function (r) { return r.blob(); }).then(function (b) {
+        return saveBlob(b, name);
+      }).catch(function () { try { openDownload(href); } catch (err) {} });
+    } catch (err) {}
+  }, true);
+})();
+</script>
 </body>
 
 </html>
