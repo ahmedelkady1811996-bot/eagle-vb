@@ -2124,6 +2124,49 @@ body { overscroll-behavior: none; }
     font-weight: 700 !important;
     min-width: 72px !important;
   }
+
+  /* Menus must open above everything; avoid clipping */
+  #commandbar, #menus, .menu {
+    overflow: visible !important;
+    position: relative !important;
+  }
+  .menu {
+    z-index: 50;
+  }
+  .menu.is-open {
+    z-index: 12000 !important;
+  }
+  .menu__drop {
+    z-index: 12001 !important;
+    position: fixed !important;
+    display: none;
+    max-height: min(65vh, 420px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    min-width: min(260px, 92vw) !important;
+  }
+  .menu.is-open .menu__drop {
+    display: block !important;
+  }
+  /* Keep app layout contained — only menus escape via position:fixed to body */
+  #app {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  #mainrow, #center {
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  #viewport {
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
+  }
+  #canvas {
+    overflow: visible !important;
+  }
+
   #vb-preview .vb-preview__stage {
     overflow: auto !important;
     -webkit-overflow-scrolling: touch !important;
@@ -26960,11 +27003,17 @@ if (document.readyState === 'loading') {
       var t = e.changedTouches[0];
       var el = document.elementFromPoint(t.clientX, t.clientY) || e.target;
       if (isEditable(el)) return;
-      if (el.closest && el.closest('#vb-mobi-bar, #vb-mobi-scrim, .menu__drop, .modal, input, textarea, select, a')) {
-        if (!el.closest('#viewport, #canvas, #overlay, .handle, .vb-b, #stage')) return;
+      if (el.closest && el.closest('#vb-mobi-bar, #vb-mobi-scrim, #commandbar, #menus, #toolstrip, .menu, .menu__drop, .modal, input, textarea, select, a, button')) {
+        tracking = null;
+        return;
       }
-      tracking = { id: t.identifier, target: el };
-      fire('mousedown', t, el, 1);
+      var interactive = el.closest && el.closest('.vb-b, .handle, #overlay .handle, [data-id]');
+      if (!interactive) {
+        tracking = null;
+        return;
+      }
+      tracking = { id: t.identifier, target: interactive };
+      fire('mousedown', t, interactive, 1);
     }, { passive: true, capture: true });
     document.addEventListener('touchmove', function (e) {
       if (!tracking || !e.changedTouches) return;
@@ -27166,6 +27215,61 @@ if (document.readyState === 'loading') {
       setTimeout(layoutFix, 1500);
     }
   }
+
+
+  /* Position fixed menu dropdowns under their trigger (mobile stacking fix) */
+  var _vbMenuIgnoreUntil = 0;
+  function placeMobiDrop(trigger) {
+    var menu = trigger.closest('.menu');
+    if (!menu) return;
+    var drop = menu.querySelector('.menu__drop') || document.querySelector('.vb-mobi-drop[data-for="' + (menu.dataset.m || '') + '"]');
+    // after app toggles is-open
+    setTimeout(function () {
+      menu = trigger.closest('.menu');
+      if (!menu || !menu.classList.contains('is-open')) return;
+      drop = menu.querySelector('.menu__drop');
+      if (!drop) return;
+      if (!drop._vbHome) drop._vbHome = menu;
+      if (drop.parentElement !== document.body) document.body.appendChild(drop);
+      drop.classList.add('vb-mobi-drop');
+      drop.style.setProperty('display', 'block', 'important');
+      drop.style.setProperty('position', 'fixed', 'important');
+      drop.style.setProperty('z-index', '20000', 'important');
+      drop.style.setProperty('max-height', 'min(65vh, 420px)', 'important');
+      drop.style.setProperty('overflow-y', 'auto', 'important');
+      drop.style.setProperty('min-width', 'min(260px, 92vw)', 'important');
+      drop.style.setProperty('background', 'var(--panel-2, #2d2d2d)', 'important');
+      drop.style.setProperty('border', '1px solid var(--line-2, #444)', 'important');
+      drop.style.setProperty('border-radius', '10px', 'important');
+      drop.style.setProperty('box-shadow', '0 12px 40px rgba(0,0,0,.45)', 'important');
+      drop.style.setProperty('padding', '5px', 'important');
+      drop.style.setProperty('right', 'auto', 'important');
+      drop.style.setProperty('bottom', 'auto', 'important');
+      var r = trigger.getBoundingClientRect();
+      var left = Math.round(r.left);
+      var w = Math.max(drop.offsetWidth || 0, 220);
+      if (left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
+      if (left < 8) left = 8;
+      drop.style.setProperty('top', Math.round(r.bottom + 4) + 'px', 'important');
+      drop.style.setProperty('left', left + 'px', 'important');
+      _vbMenuIgnoreUntil = Date.now() + 300;
+    }, 10);
+  }
+  document.addEventListener('click', function (e) {
+    if (!isMobile()) return;
+    var t = e.target.closest && e.target.closest('.menu__trigger');
+    if (t) {
+      placeMobiDrop(t);
+      return;
+    }
+    if (Date.now() < _vbMenuIgnoreUntil) return;
+    if (e.target.closest && (e.target.closest('.menu__drop') || e.target.closest('.vb-mobi-drop'))) return;
+    document.querySelectorAll('.vb-mobi-drop').forEach(function (drop) {
+      drop.classList.remove('vb-mobi-drop');
+      drop.style.cssText = '';
+      if (drop._vbHome) drop._vbHome.appendChild(drop);
+    });
+  }, true);
 
   function boot() { ensureUI(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
