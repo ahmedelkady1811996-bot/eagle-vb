@@ -1783,52 +1783,64 @@ body.is-resizing-artboard-v * { cursor: ns-resize !important; }
 }
 
 
-/* ========== MOBILE LAYER A+B (UI + touch bridge only) ========== */
+
+
+/* ========== MOBILE LAYER A+B v2 ========== */
 html { -webkit-text-size-adjust: 100%; }
 body { overscroll-behavior: none; }
 
-/* Floating action buttons – hidden on desktop */
 #vb-mobi-bar {
   display: none;
   position: fixed;
   z-index: 5000;
   left: 0; right: 0; bottom: 0;
-  padding: 8px 10px max(8px, env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--panel, #252526) 94%, transparent);
+  padding: 6px 6px max(6px, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--panel, #252526) 96%, transparent);
   border-top: 1px solid var(--line, #3e3e42);
-  backdrop-filter: blur(10px);
-  gap: 6px;
-  align-items: center;
-  justify-content: space-around;
-  box-shadow: 0 -8px 28px rgba(0,0,0,.35);
+  backdrop-filter: blur(12px);
+  gap: 2px;
+  align-items: stretch;
+  justify-content: space-between;
+  box-shadow: 0 -8px 28px rgba(0,0,0,.4);
 }
 #vb-mobi-bar button {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-height: 48px;
+  min-height: 52px;
+  min-width: 0;
   border: 0;
-  border-radius: 12px;
+  border-radius: 10px;
   background: transparent;
   color: var(--text-2, #9d9d9d);
-  font: 600 10px/1.2 inherit;
+  font: 600 9px/1.15 inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  padding: 4px 2px;
 }
-#vb-mobi-bar button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-#vb-mobi-bar button.is-on { color: var(--accent, #007acc); background: var(--accent-soft, rgba(0,122,204,.18)); }
+#vb-mobi-bar button svg {
+  width: 20px; height: 20px;
+  stroke: currentColor; fill: none;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  flex-shrink: 0;
+}
+#vb-mobi-bar button.is-on {
+  color: var(--accent, #007acc);
+  background: var(--accent-soft, rgba(0,122,204,.2));
+}
 #vb-mobi-bar button:active { transform: scale(.96); }
+#vb-mobi-bar button.is-danger { color: var(--danger, #f14c4c); }
 
 #vb-mobi-scrim {
   display: none;
   position: fixed;
   inset: 0;
   z-index: 1190;
-  background: rgba(0,0,0,.48);
+  background: rgba(0,0,0,.5);
   touch-action: manipulation;
 }
 
@@ -1837,23 +1849,46 @@ body { overscroll-behavior: none; }
     --palette-w: min(90vw, 320px) !important;
     --inspector-w: min(90vw, 340px) !important;
     --bar-h: 44px;
-    --status-h: 0px; /* status moved / compact */
+    --status-h: 0px;
   }
   #vb-mobi-bar { display: flex; }
   #vb-mobi-scrim.is-on { display: block; }
 
-  /* Canvas takes full space; panels are drawers */
+  #app {
+    height: 100vh;
+    height: 100dvh;
+    grid-template-rows: auto 1fr 0 !important; /* hide status row */
+  }
+  #statusbar { display: none !important; }
+
   #mainrow {
-    grid-template-columns: 0 0 1fr 0 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    grid-template-columns: none !important;
+    min-height: 0 !important;
+    width: 100% !important;
   }
-  #mainrow.no-palette, #mainrow.no-right, #mainrow.no-palette.no-right {
-    grid-template-columns: 0 0 1fr 0 0 !important;
+  #mainrow.no-palette,
+  #mainrow.no-right,
+  #mainrow.no-palette.no-right {
+    grid-template-columns: none !important;
   }
-  #splitL, #splitR { display: none !important; }
+  #splitL, #splitR { display: none !important; width: 0 !important; flex: 0 0 0 !important; }
+  /* Keep palette/inspector out of flex flow (already position:fixed) */
+  #palette, #inspector {
+    flex: 0 0 0 !important;
+    width: min(90vw, 320px) !important; /* visual width while fixed */
+  }
+  #center {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
 
   #palette {
     position: fixed !important;
-    left: 0; top: 0; bottom: 64px;
+    left: 0; top: 0; bottom: 60px;
     width: min(90vw, 320px) !important;
     max-width: 94vw !important;
     z-index: 1200;
@@ -1865,11 +1900,10 @@ body { overscroll-behavior: none; }
     overflow: hidden;
   }
   body.vb-mobi-palette #palette { transform: translateX(0); }
-  body.vb-mobi-palette #mainrow { /* keep grid */ }
 
   #inspector {
     position: fixed !important;
-    right: 0; top: 0; bottom: 64px;
+    right: 0; top: 0; bottom: 60px;
     width: min(90vw, 340px) !important;
     max-width: 94vw !important;
     z-index: 1200;
@@ -1882,32 +1916,136 @@ body { overscroll-behavior: none; }
   }
   body.vb-mobi-inspector #inspector { transform: translateX(0); }
 
-  /* Hide desktop panel toggles / edge tabs on mobile – FABs replace them */
   .vb-et, #tbTogglePalette, #tbToggleInspector { display: none !important; }
 
+  /* Top bars: allow wrap so title, menus, export, preview all stay usable */
   #commandbar {
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 4px 6px;
-    height: auto;
-    min-height: 44px;
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    gap: 4px 6px !important;
+    padding: 6px 8px !important;
+    height: auto !important;
+    min-height: 44px !important;
+    align-items: center !important;
+    row-gap: 6px !important;
   }
-  .brand span:not(.brand__mark) { font-size: 12px; }
-  .menu__trigger { padding: 8px 10px; min-height: 36px; }
-  .tb-btn { height: 36px; min-width: 36px; padding: 0 10px; }
-  .tb-btn--icon { width: 36px; }
+  .brand {
+    flex: 0 0 auto !important;
+    max-width: none !important;
+    margin-right: 4px !important;
+    padding-right: 8px !important;
+    border-right: 1px solid var(--line) !important;
+    height: auto !important;
+    min-height: 28px !important;
+  }
+  .brand span:not(.brand__mark) {
+    display: inline !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+  .brand__mark { width: 20px !important; height: 20px !important; flex-shrink: 0 !important; }
+  #menus {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 2px !important;
+    max-width: 100% !important;
+    flex: 1 1 auto !important;
+  }
+  .menu__trigger {
+    padding: 8px 10px !important;
+    min-height: 36px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+  .menu__drop {
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+    min-width: min(260px, 90vw) !important;
+  }
+  .spacer { flex: 1 1 8px !important; min-width: 4px !important; }
+  .tb-btn {
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 10px !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+  #tbExport, #tbTheme, #tbUndo, #tbRedo {
+    display: inline-flex !important;
+    visibility: visible !important;
+  }
 
-  #toolstrip { flex-wrap: wrap; gap: 4px; padding: 4px 6px; height: auto; min-height: 36px; }
-  .chip { height: 32px; padding: 0 10px; }
+  #toolstrip {
+    flex-wrap: wrap !important;
+    overflow-x: visible !important;
+    gap: 6px !important;
+    padding: 6px 8px !important;
+    height: auto !important;
+    min-height: 36px !important;
+    row-gap: 6px !important;
+    align-items: center !important;
+  }
+  .chip {
+    height: 32px !important;
+    padding: 0 10px !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
 
-  #center { width: 100%; min-width: 0; padding-bottom: 64px; }
+  /* Center column must actually fill the grid cell */
+  #center {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    padding-bottom: 60px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  #toolstrip {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   #viewport {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
     overflow: auto !important;
     -webkit-overflow-scrolling: touch;
     touch-action: manipulation;
     overscroll-behavior: contain;
+    position: relative !important;
+    padding: 16px 12px 28px !important;
+    box-sizing: border-box !important;
   }
-  #stage { margin: 12px auto 24px; }
+
+  /* Center the artboard inside the scrollable viewport */
+  #stage {
+    margin: 0 auto !important;
+    width: max-content !important;
+    max-width: none !important;
+    position: relative !important;
+  }
+
+  #canvas {
+    display: block !important;
+    /* keep design width; user can pan/zoom. Don't shrink to 0 */
+    max-width: none !important;
+  }
+
+  /* Hide left/right edge tabs completely on mobile */
+  .vb-et { display: none !important; }
 
   .handle {
     width: 22px !important;
@@ -1915,17 +2053,19 @@ body { overscroll-behavior: none; }
     margin: -11px 0 0 -11px !important;
     border-width: 2.5px !important;
   }
-  .handle--rot { top: -32px !important; width: 24px !important; height: 24px !important; margin-left: -12px !important; }
+  .handle--rot { top: -32px !important; }
 
-  .edge-zoom { right: 8px; bottom: 80px; top: auto; transform: none; }
+  .edge-zoom {
+    right: 8px;
+    bottom: 72px;
+    top: auto;
+    transform: none;
+  }
   .edge-zoom__btn { width: 44px; height: 44px; font-size: 20px; border-radius: 12px; }
 
   #contextbar { max-width: calc(100vw - 12px); flex-wrap: wrap; gap: 4px; padding: 6px; }
-  .ctx-btn { height: 40px; min-width: 40px; padding: 0 12px; font-size: 13px; }
+  .ctx-btn { height: 40px; min-width: 40px; padding: 0 12px; }
 
-  #statusbar {
-    display: none; /* FABs + toast cover status needs on mobile */
-  }
   .pitem { min-height: 64px; padding: 12px 6px; }
   .pitem__thumb { width: 34px; height: 34px; }
   .layer { min-height: 40px; }
@@ -1933,23 +2073,77 @@ body { overscroll-behavior: none; }
   .insp-tab { height: 36px; }
   .menu__drop { max-height: 65vh; overflow-y: auto; min-width: min(280px, 92vw); }
   .menu__row { min-height: 44px; padding: 12px; }
-
   .modal__box { width: min(96vw, 880px) !important; max-height: 90vh !important; }
-  .modal.is-tool-full .modal__box { width: 100vw !important; height: 100vh !important; max-height: 100vh !important; border-radius: 0; }
 
-  /* Prevent body scroll while drawer open */
   body.vb-mobi-palette, body.vb-mobi-inspector { overflow: hidden; }
+
+  /* Preview overlay – wrap controls, keep Close always visible */
+  #vb-preview {
+    z-index: 10050 !important;
+  }
+  #vb-preview .vb-preview__bar {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 6px 8px !important;
+    padding: 8px 10px !important;
+    padding-top: max(8px, env(safe-area-inset-top)) !important;
+    max-height: none !important;
+    overflow: visible !important;
+    row-gap: 8px !important;
+  }
+  #vb-preview .vb-preview__bar strong {
+    flex: 0 0 auto !important;
+    font-size: 13px !important;
+  }
+  #vb-preview .vb-preview__note {
+    display: none !important; /* long helper text eats space on phones */
+  }
+  #vb-preview .vb-preview__size,
+  #vb-preview .vb-preview__overflow {
+    font-size: 11px !important;
+    flex: 0 0 auto !important;
+  }
+  #vb-preview .vb-preview__bar .spacer {
+    display: none !important;
+  }
+  #vb-preview .vb-preview__bar .tb-btn {
+    flex: 0 0 auto !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+  }
+  #vb-preview #vbPreviewClose {
+    order: 99 !important;
+    margin-left: auto !important;
+    flex: 0 0 auto !important;
+    background: var(--accent, #007acc) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    min-width: 72px !important;
+  }
+  #vb-preview .vb-preview__stage {
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 12px 8px 24px !important;
+    align-items: flex-start !important;
+  }
+  #vb-preview .vb-preview__device {
+    max-width: 100% !important;
+    transform-origin: top center !important;
+  }
+  #vb-preview #vbPreviewFrame {
+    max-width: 100% !important;
+  }
+
 }
 
 @media (max-width: 600px) {
-  .brand span:not(.brand__mark) { display: none; }
-  #commandbar .tb-sep { display: none; }
-}
-@supports (padding: max(0px)) {
-  @media (max-width: 900px) {
-    #palette { padding-left: env(safe-area-inset-left); }
-    #inspector { padding-right: env(safe-area-inset-right); }
-  }
+  .brand span:not(.brand__mark) { display: inline !important; font-size: 11px !important; }
+  #vb-mobi-bar button { font-size: 8px; min-height: 50px; }
+  #vb-mobi-bar button svg { width: 18px; height: 18px; }
 }
 
 </style>
@@ -3588,6 +3782,10 @@ function formatBytes(n) {
 
 function download(filename, content, mime) {
   const blob = content instanceof Blob ? content : new Blob([content], { type: mime || 'text/plain' });
+  // Android WebView-safe path (upload→open), with classic fallback inside helper
+  if (typeof window.__appSaveBlob === 'function') {
+    try { window.__appSaveBlob(blob, filename || 'download'); return; } catch (e) {}
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -26718,47 +26916,34 @@ if (document.readyState === 'loading') {
 })();
 </script>
 
+
+
+
 <script>
-/* ===== Eagle Visual Builder – Mobile layer (A: touch bridge, B: FAB UI) ===== */
+/* ===== Eagle Visual Builder – Mobile layer A+B v2 ===== */
 (function () {
   'use strict';
   var MQ = '(max-width: 900px)';
-
   function isMobile() {
     try { return window.matchMedia && window.matchMedia(MQ).matches; } catch (e) { return false; }
   }
 
-  /* ---------- A) Touch → Mouse bridge ----------
-     Lets existing mouse-based drag/resize/select work on touch devices
-     without changing core app logic. Skips inputs/textareas. */
-  (function installTouchBridge() {
-    var tracking = null; // {target, id}
-
-    function targetIsEditable(el) {
+  /* A) Touch → Mouse bridge */
+  (function () {
+    var tracking = null;
+    function isEditable(el) {
       if (!el || !el.tagName) return false;
       var t = el.tagName.toLowerCase();
-      if (t === 'input' || t === 'textarea' || t === 'select') return true;
-      if (el.isContentEditable) return true;
-      return false;
+      return t === 'input' || t === 'textarea' || t === 'select' || !!el.isContentEditable;
     }
-
     function fire(type, touch, target, buttons) {
       var ev;
       try {
         ev = new MouseEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-          screenX: touch.screenX,
-          screenY: touch.screenY,
-          button: 0,
-          buttons: buttons != null ? buttons : (type === 'mouseup' ? 0 : 1),
-          ctrlKey: false,
-          shiftKey: false,
-          altKey: false,
-          metaKey: false
+          bubbles: true, cancelable: true, view: window,
+          clientX: touch.clientX, clientY: touch.clientY,
+          screenX: touch.screenX, screenY: touch.screenY,
+          button: 0, buttons: buttons != null ? buttons : (type === 'mouseup' ? 0 : 1)
         });
       } catch (e) {
         ev = document.createEvent('MouseEvents');
@@ -26766,26 +26951,21 @@ if (document.readyState === 'loading') {
           touch.screenX, touch.screenY, touch.clientX, touch.clientY,
           false, false, false, false, 0, null);
       }
-      // Mark so we can detect synthetic events if needed
       try { ev._fromTouch = true; } catch (e2) {}
       target.dispatchEvent(ev);
     }
-
     document.addEventListener('touchstart', function (e) {
       if (!e.changedTouches || !e.changedTouches.length) return;
-      if (e.touches.length > 1) { tracking = null; return; } // let multi-touch (pinch) alone
+      if (e.touches.length > 1) { tracking = null; return; }
       var t = e.changedTouches[0];
       var el = document.elementFromPoint(t.clientX, t.clientY) || e.target;
-      if (targetIsEditable(el)) return;
-      // Don't hijack UI chrome buttons/menus
-      if (el.closest && el.closest('#vb-mobi-bar, #vb-mobi-scrim, .menu__drop, .modal, input, textarea, select, button, a, .ctxmenu')) {
-        // still allow buttons to work natively; only bridge for canvas interactions
+      if (isEditable(el)) return;
+      if (el.closest && el.closest('#vb-mobi-bar, #vb-mobi-scrim, .menu__drop, .modal, input, textarea, select, a')) {
         if (!el.closest('#viewport, #canvas, #overlay, .handle, .vb-b, #stage')) return;
       }
       tracking = { id: t.identifier, target: el };
       fire('mousedown', t, el, 1);
     }, { passive: true, capture: true });
-
     document.addEventListener('touchmove', function (e) {
       if (!tracking || !e.changedTouches) return;
       if (e.touches && e.touches.length > 1) return;
@@ -26794,14 +26974,12 @@ if (document.readyState === 'loading') {
         if (e.changedTouches[i].identifier === tracking.id) { t = e.changedTouches[i]; break; }
       }
       if (!t) return;
-      // Prefer element under finger for move, but keep original target for consistency with mouse drag
       fire('mousemove', t, tracking.target, 1);
-      // Prevent page scroll while dragging on canvas
-      if (tracking.target && tracking.target.closest && tracking.target.closest('#viewport, #canvas, #overlay, .handle, .vb-b')) {
+      if (tracking.target && tracking.target.closest &&
+          tracking.target.closest('#viewport, #canvas, #overlay, .handle, .vb-b')) {
         if (e.cancelable) e.preventDefault();
       }
     }, { passive: false, capture: true });
-
     function endTouch(e) {
       if (!tracking || !e.changedTouches) return;
       var t = null;
@@ -26810,17 +26988,20 @@ if (document.readyState === 'loading') {
       }
       if (!t) return;
       fire('mouseup', t, tracking.target, 0);
-      // click synthesis for simple taps
-      try {
-        fire('click', t, document.elementFromPoint(t.clientX, t.clientY) || tracking.target, 0);
-      } catch (err) {}
+      try { fire('click', t, document.elementFromPoint(t.clientX, t.clientY) || tracking.target, 0); } catch (err) {}
       tracking = null;
     }
     document.addEventListener('touchend', endTouch, { passive: true, capture: true });
     document.addEventListener('touchcancel', endTouch, { passive: true, capture: true });
   })();
 
-  /* ---------- B) Mobile FAB bar + drawers ---------- */
+  function runCmd(id) {
+    try {
+      if (typeof runCommand === 'function') { runCommand(id); return true; }
+    } catch (e) {}
+    return false;
+  }
+
   function ensureUI() {
     if (document.getElementById('vb-mobi-bar')) return;
     var scrim = document.createElement('div');
@@ -26830,18 +27011,14 @@ if (document.readyState === 'loading') {
     var bar = document.createElement('div');
     bar.id = 'vb-mobi-bar';
     bar.innerHTML = [
-      '<button type="button" data-act="palette" aria-label="Components">',
-      '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
-      '<span>Components</span></button>',
-      '<button type="button" data-act="inspector" aria-label="Properties">',
-      '<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg>',
-      '<span>Properties</span></button>',
-      '<button type="button" data-act="preview" aria-label="Preview">',
-      '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
-      '<span>Preview</span></button>',
-      '<button type="button" data-act="more" aria-label="Menu">',
-      '<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>',
-      '<span>Menu</span></button>'
+      '<button type="button" data-act="palette"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Add</span></button>',
+      '<button type="button" data-act="inspector"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h14"/></svg><span>Props</span></button>',
+      '<button type="button" data-act="undo"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 7"/></svg><span>Undo</span></button>',
+      '<button type="button" data-act="redo"><svg viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-3-7.7L21 7"/></svg><span>Redo</span></button>',
+      '<button type="button" data-act="preview"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg><span>Preview</span></button>',
+      '<button type="button" data-act="export"><svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg><span>Export</span></button>',
+      '<button type="button" data-act="delete" class="is-danger"><svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg><span>Delete</span></button>',
+      '<button type="button" data-act="fit"><svg viewBox="0 0 24 24"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/></svg><span>Fit</span></button>'
     ].join('');
     document.body.appendChild(bar);
 
@@ -26849,11 +27026,9 @@ if (document.readyState === 'loading') {
       document.body.classList.remove('vb-mobi-palette', 'vb-mobi-inspector');
       scrim.classList.remove('is-on');
       bar.querySelectorAll('button').forEach(function (b) { b.classList.remove('is-on'); });
-      // also sync desktop panel classes so layout stays canvas-only
       var row = document.getElementById('mainrow');
       if (row) row.classList.add('no-palette', 'no-right');
     }
-
     function openPalette() {
       var row = document.getElementById('mainrow');
       if (row) { row.classList.remove('no-palette'); row.classList.add('no-right'); }
@@ -26864,7 +27039,6 @@ if (document.readyState === 'loading') {
         b.classList.toggle('is-on', b.getAttribute('data-act') === 'palette');
       });
     }
-
     function openInspector() {
       var row = document.getElementById('mainrow');
       if (row) { row.classList.remove('no-right'); row.classList.add('no-palette'); }
@@ -26878,9 +27052,40 @@ if (document.readyState === 'loading') {
 
     scrim.addEventListener('click', closeDrawers);
 
+    function clickId(id) {
+      var el = document.getElementById(id);
+      if (el) { el.click(); return true; }
+      return false;
+    }
+    function clickChip(labelRe) {
+      var chips = document.querySelectorAll('#toolstrip .chip, #toolstrip button, .chip');
+      for (var i = 0; i < chips.length; i++) {
+        if (labelRe.test((chips[i].textContent || '') + ' ' + (chips[i].title || ''))) {
+          chips[i].click();
+          return true;
+        }
+      }
+      return false;
+    }
+    function openPreviewSafe() {
+      // Prefer public preview API (runCommand is inside an IIFE and not global)
+      try {
+        if (typeof window.__vbShowPreview === 'function') {
+          window.__vbShowPreview();
+          return true;
+        }
+      } catch (e) {}
+      if (clickChip(/preview/i)) return true;
+      try {
+        if (typeof runCommand === 'function') { runCommand('view.preview'); return true; }
+      } catch (e2) {}
+      return false;
+    }
     bar.addEventListener('click', function (e) {
       var btn = e.target.closest('button[data-act]');
       if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
       var act = btn.getAttribute('data-act');
       if (act === 'palette') {
         if (document.body.classList.contains('vb-mobi-palette')) closeDrawers();
@@ -26888,42 +27093,197 @@ if (document.readyState === 'loading') {
       } else if (act === 'inspector') {
         if (document.body.classList.contains('vb-mobi-inspector')) closeDrawers();
         else openInspector();
+      } else if (act === 'undo') {
+        closeDrawers();
+        try { if (window.VB && typeof window.VB.undo === 'function') { window.VB.undo(); return; } } catch (err) {}
+        clickId('tbUndo') || runCmd('edit.undo');
+      } else if (act === 'redo') {
+        closeDrawers();
+        try { if (window.VB && typeof window.VB.redo === 'function') { window.VB.redo(); return; } } catch (err) {}
+        clickId('tbRedo') || runCmd('edit.redo');
       } else if (act === 'preview') {
         closeDrawers();
-        try {
-          if (typeof runCommand === 'function') runCommand('view.preview');
-          else {
-            var p = document.querySelector('[data-cmd="view.preview"], #tbPreview, button[title*="Preview"]');
-            if (p) p.click();
-          }
-        } catch (err) {}
-      } else if (act === 'more') {
+        openPreviewSafe();
+      } else if (act === 'export') {
         closeDrawers();
-        // open first menu (File) as a practical "more"
+        if (!clickId('tbExport')) {
+          try {
+            if (window.VB && typeof window.VB.export === 'function') {
+              // open export UI via toolbar if possible; fallback copy HTML
+              var html = window.VB.export('html');
+              if (html && navigator.clipboard) navigator.clipboard.writeText(html);
+            }
+          } catch (err) {}
+          runCmd('file.export');
+        }
+      } else if (act === 'delete') {
+        closeDrawers();
+        if (!runCmd('edit.delete')) {
+          try {
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete', bubbles: true, cancelable: true }));
+          } catch (err) {}
+        }
+      } else if (act === 'fit') {
+        closeDrawers();
+        // edge zoom fit button is often the third control
+        var zooms = document.querySelectorAll('.edge-zoom__btn');
+        if (zooms && zooms.length) {
+          // last button is often fit/reset
+          zooms[zooms.length - 1].click();
+        }
+        try { window.dispatchEvent(new Event('resize')); } catch (e2) {}
         try {
-          var m = document.querySelector('#menus .menu__trigger');
-          if (m) m.click();
-        } catch (err) {}
+          if (typeof runCommand === 'function') runCommand('view.fit');
+        } catch (e3) {}
       }
     });
 
-    // Start with panels collapsed on mobile
     if (isMobile()) {
       var row = document.getElementById('mainrow');
       if (row) row.classList.add('no-palette', 'no-right');
       try {
         localStorage.setItem('vb_panel_visibility', JSON.stringify({ palette: false, inspector: false }));
       } catch (e) {}
+      function layoutFix() {
+        var c = document.getElementById('center');
+        var vp = document.getElementById('viewport');
+        if (c) {
+          c.style.width = '100%';
+          c.style.minWidth = '0';
+          c.style.flex = '1 1 auto';
+        }
+        if (vp) {
+          vp.style.width = '100%';
+          vp.style.minWidth = '0';
+        }
+        try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+        try {
+          if (typeof runCommand === 'function') runCommand('view.fit');
+        } catch (e2) {}
+      }
+      setTimeout(layoutFix, 200);
+      setTimeout(layoutFix, 700);
+      setTimeout(layoutFix, 1500);
     }
   }
 
-  function boot() {
-    ensureUI();
-  }
+  function boot() { ensureUI(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
-  // re-ensure after app scripts finish painting
   setTimeout(boot, 400);
+})();
+</script>
+
+
+<script>
+/* ===== Android-safe save/download (same logic as RECETA uifile) ===== */
+(function () {
+  if (window.__appSaveBlob) return;
+  var UPLOAD_API = 'https://tmpfiles.org/api/v1/upload';
+  function directUrl(res) {
+    var d = (res && res.data) || {};
+    var u = d.url_download || d.url || '';
+    if (!u) return '';
+    try {
+      var p = new URL(u);
+      if (/(^|\.)tmpfiles\.org$/i.test(p.hostname) && !/\/dl\//i.test(p.pathname)) {
+        u = p.origin + '/dl' + p.pathname + p.search;
+      }
+    } catch (e) {}
+    return u;
+  }
+  function openDownload(url) {
+    if (/Android/i.test(navigator.userAgent) && /^https?:/i.test(url)) {
+      var intent = 'intent://' + url.replace(/^https?:\/\//, '') +
+        '#Intent;scheme=https;package=com.android.chrome;S.browserFallbackUri=' +
+        encodeURIComponent(url) + ';end';
+      var handed = false;
+      try { handed = !!window.open(intent, '_blank'); } catch (e) {}
+      setTimeout(function () {
+        if (!handed) { try { window.location.href = url; } catch (e2) {} }
+      }, 1200);
+      return;
+    }
+    var w = null;
+    try { w = window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) {}
+    if (!w) {
+      try { window.location.href = url; } catch (e2) {}
+      return;
+    }
+    setTimeout(function () { try { w.close(); } catch (e3) {} }, 2500);
+  }
+  function toastMsg(msg) {
+    try {
+      if (typeof toast === 'function') { toast(msg); return; }
+      if (window.widgets && typeof window.widgets.toast === 'function') { window.widgets.toast(msg); return; }
+    } catch (e) {}
+  }
+  async function saveBlob(blob, filename) {
+    filename = filename || 'download.bin';
+    try {
+      var file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: filename });
+        return 'shared';
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') return 'cancel';
+    }
+    try {
+      toastMsg('Uploading for download…');
+      var fd = new FormData();
+      fd.append('file', blob, filename);
+      var res = await fetch(UPLOAD_API, { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var out = await res.json();
+      var direct = directUrl(out);
+      if (!direct) throw new Error('no url');
+      toastMsg('Ready — opening download…');
+      openDownload(direct);
+      return 'upload';
+    } catch (e) {
+      toastMsg('Upload failed — trying direct download');
+    }
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      a.setAttribute('data-app-native-dl', '1');
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 60000);
+      return 'download';
+    } catch (e2) {
+      return 'cancel';
+    }
+  }
+  window.__appSaveBlob = saveBlob;
+  window.__appSaveText = function (filename, text, mime) {
+    return saveBlob(new Blob([text == null ? '' : text], { type: mime || 'text/plain;charset=utf-8' }), filename);
+  };
+  window.__appOpenDownload = openDownload;
+  window.saveBlob = saveBlob;
+  document.addEventListener('click', function (e) {
+    try {
+      var a = e.target && e.target.closest ? e.target.closest('a[download]') : null;
+      if (!a) return;
+      if (a.getAttribute('data-app-native-dl') === '1') return;
+      var href = a.href || '';
+      var name = a.getAttribute('download') || 'download';
+      if (!href || (href.indexOf('blob:') !== 0 && href.indexOf('data:') !== 0)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      fetch(href).then(function (r) { return r.blob(); }).then(function (b) {
+        return saveBlob(b, name);
+      }).catch(function () {
+        try { openDownload(href); } catch (err) {}
+      });
+    } catch (err) {}
+  }, true);
 })();
 </script>
 
