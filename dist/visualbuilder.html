@@ -2060,8 +2060,46 @@ body { overscroll-behavior: none; }
     bottom: 72px;
     top: auto;
     transform: none;
+    z-index: 60 !important;
+    pointer-events: auto !important;
   }
-  .edge-zoom__btn { width: 44px; height: 44px; font-size: 20px; border-radius: 12px; }
+  .edge-zoom__btn {
+    width: 44px; height: 44px; font-size: 20px; border-radius: 12px;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+  }
+
+  /* Four artboard resize arrows — always visible on touch (no hover) */
+  #artboard-edges {
+    pointer-events: none !important;
+    z-index: 55 !important;
+  }
+  .artboard-edge {
+    opacity: 0.85 !important;
+    pointer-events: auto !important;
+    touch-action: none !important;
+    z-index: 56 !important;
+  }
+  .artboard-edge--w, .artboard-edge--e {
+    width: 28px !important;
+  }
+  .artboard-edge--n, .artboard-edge--s {
+    height: 28px !important;
+  }
+  .artboard-edge__arrow {
+    width: 28px !important;
+    height: 44px !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+  }
+  .artboard-edge--n .artboard-edge__arrow,
+  .artboard-edge--s .artboard-edge__arrow {
+    width: 44px !important;
+    height: 28px !important;
+  }
+  body.is-resizing-artboard .artboard-edge {
+    opacity: 1 !important;
+  }
 
   #contextbar { max-width: calc(100vw - 12px); flex-wrap: wrap; gap: 4px; padding: 6px; }
   .ctx-btn { height: 40px; min-width: 40px; padding: 0 12px; }
@@ -27007,7 +27045,7 @@ if (document.readyState === 'loading') {
         tracking = null;
         return;
       }
-      var interactive = el.closest && el.closest('.vb-b, .handle, #overlay .handle, [data-id]');
+      var interactive = el.closest && el.closest('.vb-b, .handle, #overlay .handle, [data-id], .artboard-edge, .artboard-edge__arrow, .edge-zoom, .edge-zoom__btn');
       if (!interactive) {
         tracking = null;
         return;
@@ -27219,15 +27257,34 @@ if (document.readyState === 'loading') {
 
   /* Position fixed menu dropdowns under their trigger (mobile stacking fix) */
   var _vbMenuIgnoreUntil = 0;
+  function closeAllVbMenus(exceptMenu) {
+    document.querySelectorAll('.vb-mobi-drop, body > .menu__drop').forEach(function (drop) {
+      var home = drop._vbHome;
+      if (exceptMenu && home === exceptMenu) return;
+      drop.classList.remove('vb-mobi-drop');
+      drop.style.removeProperty('display');
+      drop.style.removeProperty('position');
+      drop.style.removeProperty('top');
+      drop.style.removeProperty('left');
+      drop.style.removeProperty('z-index');
+      drop.style.cssText = '';
+      if (home && drop.parentElement !== home) home.appendChild(drop);
+      if (home) home.classList.remove('is-open');
+    });
+    document.querySelectorAll('.menu.is-open').forEach(function (m) {
+      if (exceptMenu && m === exceptMenu) return;
+      m.classList.remove('is-open');
+    });
+  }
   function placeMobiDrop(trigger) {
     var menu = trigger.closest('.menu');
     if (!menu) return;
-    var drop = menu.querySelector('.menu__drop') || document.querySelector('.vb-mobi-drop[data-for="' + (menu.dataset.m || '') + '"]');
-    // after app toggles is-open
+    // Close every other menu first so only one is visible
+    closeAllVbMenus(menu);
     setTimeout(function () {
       menu = trigger.closest('.menu');
       if (!menu || !menu.classList.contains('is-open')) return;
-      drop = menu.querySelector('.menu__drop');
+      var drop = menu.querySelector('.menu__drop');
       if (!drop) return;
       if (!drop._vbHome) drop._vbHome = menu;
       if (drop.parentElement !== document.body) document.body.appendChild(drop);
@@ -27252,7 +27309,7 @@ if (document.readyState === 'loading') {
       if (left < 8) left = 8;
       drop.style.setProperty('top', Math.round(r.bottom + 4) + 'px', 'important');
       drop.style.setProperty('left', left + 'px', 'important');
-      _vbMenuIgnoreUntil = Date.now() + 300;
+      _vbMenuIgnoreUntil = Date.now() + 250;
     }, 10);
   }
   document.addEventListener('click', function (e) {
@@ -27262,13 +27319,15 @@ if (document.readyState === 'loading') {
       placeMobiDrop(t);
       return;
     }
+    // Choosing a menu item → close all menus
+    var item = e.target.closest && e.target.closest('.menu__drop .menu__row, .menu__drop button, .vb-mobi-drop .menu__row, .vb-mobi-drop button, .vb-mobi-drop [role="menuitem"]');
+    if (item) {
+      setTimeout(function () { closeAllVbMenus(null); }, 0);
+      return;
+    }
     if (Date.now() < _vbMenuIgnoreUntil) return;
     if (e.target.closest && (e.target.closest('.menu__drop') || e.target.closest('.vb-mobi-drop'))) return;
-    document.querySelectorAll('.vb-mobi-drop').forEach(function (drop) {
-      drop.classList.remove('vb-mobi-drop');
-      drop.style.cssText = '';
-      if (drop._vbHome) drop._vbHome.appendChild(drop);
-    });
+    closeAllVbMenus(null);
   }, true);
 
   function boot() { ensureUI(); }
