@@ -404,7 +404,7 @@ kbd {
     var(--canvas-bg);
 }
 
-#stage { position: relative; margin: 34px auto 60px; }
+#stage { position: relative; margin: 34px 0 60px 0; }
 
 #canvas {
   position: relative;
@@ -2026,20 +2026,19 @@ body { overscroll-behavior: none; }
     touch-action: manipulation;
     overscroll-behavior: contain;
     position: relative !important;
-    padding: 16px 12px 28px !important;
+    padding: 0 !important;
     box-sizing: border-box !important;
   }
 
   /* Center the artboard inside the scrollable viewport */
   #stage {
-    margin: 0 auto !important;
+    margin: 34px 0 60px 0 !important;
     width: max-content !important;
     max-width: none !important;
     position: relative !important;
   }
 
   #canvas {
-    display: block !important;
     /* keep design width; user can pan/zoom. Don't shrink to 0 */
     max-width: none !important;
   }
@@ -9728,12 +9727,47 @@ function addBlock(type, options) {
 
   if (free) {
     const size = estimateSize(block);
-    const slot = o.at || (owner ? { x: 24, y: 24 } : findFreeSlot(d, size));
+    let ownerSlot = null;
+    if (owner) {
+      let by = 24;
+      for (const c of owner.children || []) {
+        const cs = c.style || {};
+        if (cs.pos === 'absolute') {
+          let rh = 0;
+          try { const rr = rectOf(c.id); rh = rr ? rr.h : 0; } catch (e) { rh = 0; }
+          by = Math.max(by, (Number(cs.y) || 0) + (Number(cs.h) || rh || 60) + 16);
+        }
+      }
+      const oh = Number(owner.style && owner.style.h) || 0;
+      if (oh && by + (size.h || 40) > oh) by = Math.max(24, oh - (size.h || 40) - 24);
+      ownerSlot = { x: 24, y: by };
+    }
+    const slot = o.at || ownerSlot || (owner ? { x: 24, y: 24 } : findFreeSlot(d, size));
     block.style.pos = 'absolute';
     block.style.x = Math.round(slot.x);
     block.style.y = Math.round(slot.y);
     if (!authoredW && !INTRINSIC_TYPES.has(type)) block.style.w = block.style.w == null ? size.w : block.style.w;
-    if (block.style.h == null) block.style.h = size.h;
+    if (block.style.h == null && !INTRINSIC_TYPES.has(type)) block.style.h = size.h;
+    if (owner) {
+      /* keep new content inside the frame it was dropped into */
+      const ow = Number(owner.style && owner.style.w) || 0;
+      if (ow) {
+        const maxW = Math.max(48, ow - 48);
+        const cur = Number(block.style.w) || 0;
+        if (!(Number(block.style.w) > 0)) block.style.maxW = maxW;
+        const pct = typeof block.style.w === 'string' && /%/.test(block.style.w);
+        if (pct) block.style.w = maxW;
+        else if (cur > maxW || (!cur && !INTRINSIC_TYPES.has(type))) block.style.w = Math.min(cur || size.w || maxW, maxW);
+      }
+    }
+    if (!owner) {
+      /* never place a block partly outside the artboard */
+      const cw = Number((d.canvas && d.canvas.width)) || 1280;
+      if (!(Number(block.style.w) > 0) && (type === 'image' || type === 'video')) block.style.w = Math.min(size.w || 360, cw - 80);
+      if (Number(block.style.w) > cw) block.style.w = cw;
+      const bw = Number(block.style.w) || size.w || 200;
+      block.style.x = Math.max(0, Math.min(Number(block.style.x) || 0, cw - bw));
+    }
   }
 
   const parentId = o.parentId || null;
@@ -10083,6 +10117,19 @@ function setCanvasMode(mode) {
   if ((d.canvas && d.canvas.mode) === next) return;
   const keepW = (d.canvas && Number(d.canvas.width)) || 1280;
   let placements = [];
+  /* Screens and web pages are fixed boards with their own layout; switching the
+     artboard between Flow and Free must leave them (and everything inside them)
+     exactly where and how they are. */
+  const boardSkip = new Set();
+  const isBoard = (b) => !!(b && b.props && (b.props.screen || b.props.page));
+  const markSub = (b) => { boardSkip.add(b.id); for (const c of b.children || []) markSub(c); };
+  for (const b of d.children || []) if (isBoard(b)) markSub(b);
+  if (next === 'flow' && boardSkip.size) {
+    /* Boards only exist on a free canvas; flowing them would stack every screen
+       at 0,0. Keep the design intact and say why nothing changed. */
+    try { emit('toast', { message: 'Screens and web pages need the Free canvas. Switch each screen to Flow with its own layout toggle instead.', kind: 'info' }); } catch (e) { void e; }
+    return;
+  }
   if (next === 'free') {
     const INTRINSIC = INTRINSIC_TYPES;
     const map = (() => {
@@ -10105,7 +10152,7 @@ function setCanvasMode(mode) {
     }
     measureAll();
     let cursorY = 24;
-    placements = (d.children || []).map((b) => {
+    placements = (d.children || []).filter((b) => !boardSkip.has(b.id)).map((b) => {
       const r = rectOf(b.id);
       const st = b.style || {};
       /* Remember what flow had so "back to Flow" can restore it exactly.
@@ -10166,6 +10213,7 @@ function setCanvasMode(mode) {
       d.canvas.minHeight = Math.max(bottom, Number(d.canvas.deviceH) || 0);
     } else {
       for (const entry of findAll(d)) {
+        if (boardSkip.has(entry.block.id)) continue;
         const st = entry.block.style || (entry.block.style = {});
         st.pos = 'relative';
         delete st.x;
@@ -10261,10 +10309,16 @@ function adaptToCanvasWidth(prevW, nextW) {
 
     /* Free: honour per-block pin constraints (Figma-style).
        pin: left | right | center | scale | left-right */
-    let bottom = 120;
+    let bottom = Number(d.canvas.deviceH) || 120;
     for (const b of d.children || []) {
       const st = b.style || (b.style = {});
       if (st.pos !== 'absolute') continue;
+      /* A screen or web page is its own fixed-size board. Changing the artboard
+         breakpoint must never resize, move or restack it. */
+      if (b.props && (b.props.screen || b.props.page)) {
+        bottom = Math.max(bottom, (Number(st.y) || 0) + (Number(st.h) || Number(st.minH) || 80) + 48);
+        continue;
+      }
 
       let x = Number(st.x) || 0;
       const y = Number(st.y) || 0;
@@ -10311,7 +10365,27 @@ function adaptToCanvasWidth(prevW, nextW) {
       st.y = Math.max(0, y);
       bottom = Math.max(bottom, st.y + (Number(st.h) || 80) + 48);
     }
-    d.canvas.minHeight = bottom;
+    /* Narrowing the artboard folds blocks into one column; without this they
+       all end up on top of each other. Walk top-to-bottom and push any block
+       that now overlaps an earlier one (horizontally and vertically) below it. */
+    const abs = (d.children || []).filter((b) => b.style && b.style.pos === 'absolute' && !(b.props && (b.props.screen || b.props.page)))
+      .sort((a, b2) => (Number(a.style.y) || 0) - (Number(b2.style.y) || 0) || (Number(a.style.x) || 0) - (Number(b2.style.x) || 0));
+    const placed = [];
+    for (const b of abs) {
+      const st = b.style;
+      let r = null;
+      try { r = rectOf(b.id); } catch (e) { r = null; }
+      const bh = Number(st.h) || (r && r.h) || Number(st.minH) || 80;
+      const bw = Number(st.w) || to;
+      for (let guard = 0; guard < 50; guard++) {
+        const hit = placed.find((o) => !(st.x + bw <= o.x || st.x >= o.x + o.w || st.y + bh <= o.y || st.y >= o.y + o.h));
+        if (!hit) break;
+        st.y = Math.round(hit.y + hit.h + 16);
+      }
+      placed.push({ x: Number(st.x) || 0, y: Number(st.y) || 0, w: bw, h: bh });
+      bottom = Math.max(bottom, st.y + bh + 48);
+    }
+    d.canvas.minHeight = Math.max(bottom, Number(d.canvas.deviceH) || 0);
   });
 }
 
@@ -10342,6 +10416,38 @@ __x["setCanvasMode"] = setCanvasMode;
 __x["select"] = select;
 __x["selectAll"] = selectAll;
 __x["labelsFor"] = labelsFor;
+function resolveOverlaps() {
+  const d = doc();
+  if (!(d.canvas && d.canvas.mode === 'free')) return false;
+  try { measureAll(); } catch (e) { return false; }
+  const abs = (d.children || []).filter((b) => b.style && b.style.pos === 'absolute' && !(b.props && (b.props.screen || b.props.page)))
+    .sort((a, b2) => (Number(a.style.y) || 0) - (Number(b2.style.y) || 0) || (Number(a.style.x) || 0) - (Number(b2.style.x) || 0));
+  const moves = [];
+  const placed = [];
+  for (const b of abs) {
+    const r = rectOf(b.id);
+    if (!r) continue;
+    const st = b.style;
+    const x = Number(st.x) || 0;
+    let y = Number(st.y) || 0;
+    for (let g = 0; g < 50; g++) {
+      const hit = placed.find((o) => !(x + r.w <= o.x + 0.5 || x >= o.x + o.w - 0.5 || y + r.h <= o.y + 0.5 || y >= o.y + o.h - 0.5));
+      if (!hit) break;
+      y = Math.round(hit.y + hit.h + 16);
+    }
+    if (y !== (Number(st.y) || 0)) moves.push([b, y]);
+    placed.push({ x, y, w: r.w, h: r.h });
+  }
+  if (!moves.length) return false;
+  touch('Resolve overlaps', () => {
+    let bottom = Number(d.canvas.deviceH) || 0;
+    for (const [b, y] of moves) b.style.y = y;
+    for (const o of placed) bottom = Math.max(bottom, o.y + o.h + 48);
+    d.canvas.minHeight = Math.max(Number(d.canvas.minHeight) || 0, bottom);
+  });
+  return true;
+}
+__x["resolveOverlaps"] = resolveOverlaps;
 __x["adaptToCanvasWidth"] = adaptToCanvasWidth;
 __x["branchIds"] = branchIds;
 __x["labelOf"] = labelOf;
@@ -10836,7 +10942,8 @@ function fit() {
   const minH = (doc.canvas && Number(doc.canvas.minHeight)) || 720;
   const zW = availW / Math.max(1, target);
   const zH = availH / Math.max(1, minH);
-  const z = Math.min(1.15, Math.max(0.12, Math.min(zW, zH)));
+  /* width decides; a tall artboard scrolls instead of shrinking to a speck */
+  const z = Math.min(1.15, Math.max(0.12, Math.min(zW, Math.max(zH, zW * 0.6))));
   setZoom(z);
   const stageW = target * z;
   const stageH = Math.max(minH, 200) * z;
@@ -11455,6 +11562,7 @@ function ensureArtboardEdges(vp) {
       nextH = Math.round(Math.max(240, Math.min(4000, nextH)));
       if (nextH === Number(doc.canvas.minHeight)) return;
       doc.canvas.minHeight = nextH;
+      doc.canvas.deviceH = nextH;
     }
     applyTransform();
     emit('doc');
@@ -12241,8 +12349,20 @@ function render() {
   void SECTION_ONLY;
 }
 
+window.__vbDup = window.__vbDup || (function () {
+  let lastKey = '', lastAt = 0;
+  return function (key) {
+    const now = Date.now();
+    if (key === lastKey && now - lastAt < 450) return true;
+    lastKey = key; lastAt = now;
+    return false;
+  };
+})();
+
 function installDropTarget() {
   const canvas = canvasEl();
+  if (canvas && canvas.__vbDropInstalled) return;
+  if (canvas) canvas.__vbDropInstalled = true;
   if (!canvas) return;
 
   canvas.addEventListener('dragover', (ev) => {
@@ -12261,6 +12381,8 @@ function installDropTarget() {
     const type = ev.dataTransfer.getData('text/vb-type');
     if (!type) return;
     ev.preventDefault();
+    ev.stopPropagation();
+    if (window.__vbDup('drop:' + type)) return;
     canvas.style.outline = '';
     const p = clientToCanvas(ev.clientX, ev.clientY);
     const target = ev.target instanceof Element ? ev.target.closest('.vb-b') : null;
@@ -15716,29 +15838,44 @@ function buildToolstrip() {
     emit('doc');
     requestAnimationFrame(() => {
       applyTransform();
-      interact.fit();
       emit('view');
       buildToolstrip();
     });
   }, true));
 
-  for (const bp of BREAKPOINTS) {
-    host.appendChild(chip(bp.l, bp.v === 'desktop' ? 'desktop' : bp.v === 'tablet' ? 'tablet' : 'mobile', () => {
-      const d = currentDoc();
-      d.canvas = d.canvas || {};
-      const prevW = Number(d.canvas.width) || 1280;
-      const nextW = breakpointWidth(bp.v);
-      if (prevW === nextW && state.ui.breakpoint === bp.v) return;
-      state.ui.breakpoint = bp.v;
+  window.__vbFit = () => {
+    applyTransform();
+    interact.fit();
+    emit('view');
+    buildToolstrip();
+    buildStatusbar();
+  };
+  window.__vbSetBreakpoint = (v, after) => {
+    const d = currentDoc();
+    d.canvas = d.canvas || {};
+    const prevW = Number(d.canvas.width) || 1280;
+    const nextW = breakpointWidth(v);
+    if (!(prevW === nextW && state.ui.breakpoint === v)) {
+      state.ui.breakpoint = v;
       ops.adaptToCanvasWidth(prevW, nextW);
       emit('doc');
+    }
+    setTimeout(() => {
+      applyTransform();
+      try { if (ops.resolveOverlaps()) emit('doc'); } catch (e) { console.error('resolveOverlaps', e); }
       requestAnimationFrame(() => {
         applyTransform();
         interact.fit();
         emit('view');
         buildToolstrip();
         buildStatusbar();
+        if (typeof after === 'function') after();
       });
+    }, 160);
+  };
+  for (const bp of BREAKPOINTS) {
+    host.appendChild(chip(bp.l, bp.v === 'desktop' ? 'desktop' : bp.v === 'tablet' ? 'tablet' : 'mobile', () => {
+      window.__vbSetBreakpoint(bp.v);
     }, state.ui.breakpoint === bp.v));
   }
 
@@ -18579,7 +18716,11 @@ function blockRulesFor(doc) {
     } else {
       styleForExport = Object.assign({}, b.style, { pos: 'relative', x: undefined, y: undefined });
     }
-    const decls = styleToCss(styleForExport);
+    let decls = styleToCss(styleForExport);
+    /* a frame/screen that holds absolutely placed children must be their containing block */
+    if (free && styleForExport.pos !== 'absolute' && (b.children || []).some((c) => c && c.style && c.style.pos === 'absolute')) {
+      decls = (decls ? decls + ';' : '') + 'position:relative';
+    }
     const wrap = isRowFlex(b.style) && !/flex-wrap/.test(decls) ? 'flex-wrap:wrap' : '';
     const extra = (b.props && b.props._css) || (b.style && b.style._css) || '';
     const all = [decls, wrap, threeHostCss(b), extra].filter(Boolean).join(';');
@@ -18612,8 +18753,12 @@ function cssOnlyFor(doc) {
     '*,*::before,*::after{box-sizing:border-box}',
     'body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:' + ((doc.canvas && doc.canvas.background) || '#fff') + '}',
     pageShellCss(doc),
-    'img,video,svg{max-width:100%;height:auto}',
+    'img,video{max-width:100%;height:auto}',
+    'svg{max-width:100%}',
     '[data-type]{max-width:100%;box-sizing:border-box}',
+    '[data-type]>svg{display:block;width:100%;height:100%;overflow:visible}',
+    'button[data-type]{border:0;margin:0}',
+    '[data-type]:is(h1,h2,h3,h4,h5,h6,p,figure,blockquote,pre,ul,ol,hr,dl,dd){margin:0}',
     'html{-webkit-text-size-adjust:100%}',
     blockRulesFor(doc),
   ];
@@ -18626,8 +18771,12 @@ function cssOnly() {
     '*,*::before,*::after{box-sizing:border-box}',
     'body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:' + (doc.canvas.background || '#fff') + '}',
     pageShellCss(doc),
-    'img,video,svg{max-width:100%;height:auto}',
+    'img,video{max-width:100%;height:auto}',
+    'svg{max-width:100%}',
     '[class^="vb-"],[data-type]{max-width:100%;box-sizing:border-box}',
+    '[data-type]>svg{display:block;width:100%;height:100%;overflow:visible}',
+    'button[data-type]{border:0;margin:0}',
+    '[data-type]:is(h1,h2,h3,h4,h5,h6,p,figure,blockquote,pre,ul,ol,hr,dl,dd){margin:0}',
     '.vb-three-mount{position:absolute;inset:0;width:100%;height:100%}',
     'html{-webkit-text-size-adjust:100%}',
     blockRulesFor(doc),
@@ -20429,6 +20578,18 @@ function ensurePreview() {
     btn.addEventListener('click', () => {
       const w = btn.getAttribute('data-w');
       const kind = btn.getAttribute('data-frame') || 'desktop';
+      const bpMap = { phone: 'mobile', phoneL: 'mobile', tablet: 'tablet', laptop: 'desktop', desktop: 'desktop', wide: 'desktop' };
+      if (bpMap[kind] && typeof window.__vbSetBreakpoint === 'function') {
+        /* One source of truth: the preview device is the canvas breakpoint, so
+           what you see here is the same layout you design on the canvas. */
+        const st = __m["core/store.js"];
+        if (!window.__vbPreviewBase) {
+          const cv = currentDoc().canvas || {};
+          window.__vbPreviewBase = { depth: st.historyDepth(), bp: st.state.ui.breakpoint, w: cv.width };
+        }
+        window.__vbSetBreakpoint(bpMap[kind], () => { try { openPreview(undefined, kind); } catch (e) { void e; } });
+        return;
+      }
       applyPreviewDevice(root, kind, w);
       // Re-load for the new viewport width so the page's own media queries
       // are evaluated against the real frame the user picked.
@@ -20455,6 +20616,19 @@ function ensurePreview() {
 }
 
 function closePreview() {
+  /* Previewing a device must never change the design: undo what the preview's
+     device buttons did to the canvas, exactly. */
+  try {
+    const base = window.__vbPreviewBase;
+    window.__vbPreviewBase = null;
+    if (base) {
+      const st = __m["core/store.js"];
+      let g = 0;
+      while (st.historyDepth() > base.depth && g++ < 50) st.undo();
+      st.state.ui.breakpoint = base.bp;
+      if (typeof window.__vbFit === 'function') setTimeout(window.__vbFit, 60);
+    }
+  } catch (e) { void e; }
   const root = document.getElementById('vb-preview');
   if (root) {
     root.hidden = true;
@@ -20468,7 +20642,7 @@ function closePreview() {
   try { emit('view'); } catch (e) { void e; }
 }
 
-function openPreview(html) {
+function openPreview(html, forceKind) {
   const root = ensurePreview();
   root.hidden = false;
   root.style.display = 'flex';
@@ -20480,7 +20654,13 @@ function openPreview(html) {
   if (canvasW <= 430) kind = 'phone';
   else if (canvasW <= 900) kind = 'tablet';
   else if (canvasW <= 1360) kind = 'laptop';
-  const deviceW = (PREVIEW_DEVICES[kind] || PREVIEW_DEVICES.desktop).w;
+  /* Exact canvas width: a 1280 artboard previewed in a 1360 frame shifts every
+     centred/absolute block by 40px, which read as "elements moved". */
+  /* The button the user pressed stays the active device, and the frame is as
+     wide as the design (wide/phone-L frames may be larger: the page centres). */
+  if (forceKind && PREVIEW_DEVICES[forceKind]) kind = forceKind;
+  const deviceW = (kind === 'wide' || kind === 'phoneL')
+    ? Math.max(canvasW, PREVIEW_DEVICES[kind].w) : canvasW;
   const raw = html || (typeof htmlBundle === 'function' ? htmlBundle() : '');
   frame.__vbRawHtml = raw;
   const source = withPreviewResponsive(raw, deviceW);
@@ -23090,6 +23270,7 @@ const MENUS = [
       { id: 'tools.themeEditor', label: 'Theme Editor' },
       { id: 'tools.quickPalettes', label: 'Quick Color Palettes' },
       { id: 'tools.cssButtonGenerator', label: 'Css Button Generator' },
+	  { id: 'tools.onlineDeveloperTools', label: 'Online Developer Tools' },
       '-',
       { id: 'tools.files', label: 'File & image viewer…' },
       { id: 'tools.anim', label: 'Animation maker…' },
@@ -23216,6 +23397,7 @@ function repaint() {
   try { tokens.applyTokensToDom(); } catch (e) { void e; }
   three.mountAll();
   try { mushaf.scheduleMushaf(); } catch (e) { void e; }
+  try { applyTransform(); } catch (e) { void e; }
   measureAll();
   interact.paint();
   shell.buildStatusbar();
@@ -23250,9 +23432,23 @@ function bindEvents() {
   });
 
   on('palette:add', (type) => {
-    ops.addBlock(type);
+    if (window.__vbDup && window.__vbDup('add:' + type)) return;
+    const d = currentDoc();
+    const selId = Array.from(state.selection || [])[0];
+    let sel = selId ? find(d, selId) : null;
+    let pid = null;
+    if (sel) {
+      let cur = sel;
+      while (cur && !isContainer(cur.type)) cur = parentOf(d, cur.id);
+      if (cur) pid = cur.id;
+    }
+    let made = null;
+    if (pid) made = ops.addBlock(type, { parentId: pid });
+    if (!made) made = ops.addBlock(type);
     repaint();
   });
+
+  window.__vbm_addAtSel = (type) => { emit('palette:add', type); };
 
   on('ctx:color', (payload) => {
     if (!payload || !payload.block) return;
@@ -26603,13 +26799,11 @@ async function runCommand(id) {
     case 'view.flow':
       ops.setCanvasMode('flow');
       repaint();
-      interact.fit();
       shell.buildToolstrip();
       break;
     case 'view.free':
       ops.setCanvasMode('free');
       repaint();
-      interact.fit();
       shell.buildToolstrip();
       break;
     case 'view.help':
@@ -26789,6 +26983,9 @@ async function runCommand(id) {
     case 'tools.cssButtonGenerator':
       openFolderTool('Css Button Generator', 'css-button-generator/index.html');
       break;
+	case 'tools.onlineDeveloperTools':
+      openFolderTool('Online Developer Tools', 'https://ahmedelkady1811996-bot.github.io/Eagle-Developers-Tools/');
+      break;  
     case 'tools.files': ToolsSuite.filesViewer(); break;
     case 'tools.pdf': ToolsSuite.pdfStudio(); break;
     case 'tools.anim': ToolsSuite.animMaker(); break;
@@ -27237,6 +27434,7 @@ function boot() {
 
   repaint();
   interact.fit();
+  requestAnimationFrame(() => { interact.fit(); setTimeout(() => { try { interact.fit(); } catch (e) {} }, 250); });
 
   if (pendingAutosave && pendingAutosave.payload) {
     const ageMin = pendingAutosave.at ? Math.round((Date.now() - pendingAutosave.at) / 60000) : null;
@@ -27864,7 +28062,8 @@ if (document.readyState === 'loading') {
 })();
 </script>
 
-<script id="vbm-js">
+<script id="vbm-core">
+/* ---- vbm-js ---- */
 window.vbmEvery=function(fn,ms,tag){return setInterval(function(){if(document.hidden)return;try{fn();}catch(e){(window.__vbmTick=window.__vbmTick||{})[tag||String(fn).slice(9,40)]=String(e&&e.stack||e).slice(0,400);}},ms);};
 
 (function(){
@@ -27932,9 +28131,7 @@ window.vbmEvery=function(fn,ms,tag){return setInterval(function(){if(document.hi
   var bar=document.getElementById('commandbar'),sp=bar&&bar.querySelector('.spacer');
   if(sp){var h=document.createElement('button');h.className='tb-btn';h.type='button';h.textContent='⌘K';h.title='Command palette (Ctrl+K)';h.style.cssText='border:1px solid var(--line);font-family:var(--font-mono);font-size:11px';h.onclick=open;sp.after(h);}
 })();
-</script>
-
-<script id="vbm-js2">
+/* ---- vbm-js2 ---- */
 (function(){
   var $=function(s,r){return (r||document).querySelector(s);},$$=function(s,r){return [].slice.call((r||document).querySelectorAll(s));};
   var zoom=function(){var c=$('#canvas');if(!c||!c.offsetWidth)return 1;return c.getBoundingClientRect().width/c.offsetWidth||1;};
@@ -28012,9 +28209,7 @@ window.vbmEvery=function(fn,ms,tag){return setInterval(function(){if(document.hi
   if(insp)new MutationObserver(function(){eyes();}).observe(insp,{childList:true,subtree:true});
   eyes();
 })();
-</script>
-
-<script id="vbm-js4">
+/* ---- vbm-js4 ---- */
 (function(){
 try{
   var $=function(s,r){return (r||document).querySelector(s);};
@@ -28052,16 +28247,30 @@ try{
 
   /* ---------- place an image block (drops into containers in flow mode) ---------- */
   function place(a,cx,cy){
-    if(!a)return;var im=new Image();
+    if(!a)return;if(window.__vbDup&&window.__vbDup('img:'+(a.id||a.name||'')+':'+(a.src||'').length))return;var im=new Image();
     im.onload=function(){
       var w=a.w||Math.min(320,im.naturalWidth||320),h=a.h||Math.round(w*(im.naturalHeight||w)/(im.naturalWidth||w));
-      var d=getDoc(),free=d&&d.canvas&&d.canvas.mode==='free',p=null;
+      var d=getDoc(),p=null;
       try{p=co.clientToCanvas(cx,cy);}catch(e){}
-      var el=document.elementFromPoint(cx,cy),t=el&&el.closest&&el.closest('#canvas .vb-b');
+      var CAT=window.__m['model/catalog.js'];
+      var fnd=function(l,i){for(var j=0;j<(l||[]).length;j++){if(l[j].id===i)return l[j];var r=fnd(l[j].children,i);if(r)return r;}return null;};
+      var el=document.elementFromPoint(cx,cy),host=el&&el.closest&&el.closest('#canvas .vb-b');
+      var owner=null,oel=null,cont=null;
+      for(var n=host;n;n=n.parentElement&&n.parentElement.closest?n.parentElement.closest('.vb-b'):null){
+        var bb=fnd(d.children,n.dataset.id);if(!bb)continue;
+        if(!cont&&CAT.isContainer(bb.type))cont=bb;
+        if(bb.props&&(bb.props.screen||bb.props.page)){owner=bb;oel=n;break;}
+      }
+      var free=owner?owner.props.layout==='free':!!(d&&d.canvas&&d.canvas.mode==='free');
       var o={props:{src:a.src,alt:a.name},style:{w:w,h:h,radius:0}};
-      if(free&&p)o.at={x:Math.round(p.x-w/2),y:Math.round(p.y-h/2)};
-      if(!free&&t)o.parentId=t.dataset.id;
+      if(free){
+        if(owner){var cvs=document.querySelector('#canvas'),z=cvs&&cvs.offsetWidth?cvs.getBoundingClientRect().width/cvs.offsetWidth:1,r=oel.getBoundingClientRect();
+          o.at={x:Math.round((cx-r.left)/z-w/2),y:Math.round((cy-r.top)/z-h/2)};}
+        else if(p)o.at={x:Math.round(p.x-w/2),y:Math.round(p.y-h/2)};
+        if(owner)o.parentId=owner.id;
+      }else if(cont||owner){o.parentId=(cont||owner).id;}
       var b=null;try{b=ops.addBlock('image',o);}catch(e){}
+      if(!b&&o.parentId){o.parentId=owner?owner.id:null;if(!o.parentId)delete o.parentId;try{b=ops.addBlock('image',o);}catch(e){}}
       if(!b&&o.parentId){delete o.parentId;try{ops.addBlock('image',o);}catch(e){}}
     };
     im.src=a.src;
@@ -28108,23 +28317,37 @@ try{
   function fnAny(n){for(var k in M){if(M[k]&&typeof M[k][n]==='function')return M[k][n];}return null;}
   var stateRef=M['core/store.js'].state;
   function build(n){var b=cat.createBlock(n.type);Object.assign(b.props,n.props||{});Object.assign(b.style,n.style||{});if(n.name)b.name=n.name;b.children=(n.children||[]).map(build);return b;}
-  function nextSlot(d){var x=80;(d.children||[]).forEach(function(b){if(b.props&&(b.props.screen||b.props.page)){var r=(Number(b.style.x)||0)+(Number(b.style.w)||0);if(r+80>x)x=r+80;}});return {x:x,y:80};}
+  function nextSlot(d,w,h){
+    var cw=Number(d.canvas&&d.canvas.width)||1280,gap=80,x=gap,y=gap,rowBottom=0,boards=[];
+    (d.children||[]).forEach(function(b){if(b.props&&(b.props.screen||b.props.page)){boards.push({x:Number(b.style.x)||0,y:Number(b.style.y)||0,w:Number(b.style.w)||0,h:Number(b.style.h)||Number(b.style.minH)||900});}});
+    /* first free spot, scanning rows left-to-right inside the artboard width */
+    var step=40,maxY=20000;
+    for(var yy=gap;yy<maxY;yy+=step){
+      for(var xx=gap;xx+w<=Math.max(cw-gap+1,w+gap);xx+=step){
+        var hit=boards.some(function(o){return !(xx+w+gap<=o.x||xx>=o.x+o.w+gap||yy+(h||900)+gap<=o.y||yy>=o.y+o.h+gap);});
+        if(!hit)return {x:xx,y:yy};
+      }
+    }
+    return {x:gap,y:gap};
+  }
   function selOwner(){var d=getDoc(),id=Array.from(stateRef.selection)[0];if(!id)return null;var el=document.querySelector('#canvas [data-id="'+id+'"]');
     function fb(l,i){for(var j=0;j<(l||[]).length;j++){if(l[j].id===i)return l[j];var r=fb(l[j].children,i);if(r)return r;}return null;}
     while(el){var b=fb(d.children,el.dataset.id);if(b&&b.props&&(b.props.screen||b.props.page))return b;el=el.parentElement&&el.parentElement.closest('.vb-b');}return null;}
   function addFrame(spec){
     var d=getDoc();
     if(!(d.canvas&&d.canvas.mode==='free')){try{ops.setCanvasMode('free');}catch(e){}d=getDoc();}
-    var s=nextSlot(d),st={w:spec.w,bg:spec.bg||'#ffffff',overflow:'hidden',radius:spec.radius==null?30:spec.radius,justify:spec.justify||'flex-start',shadow:'0 24px 60px rgba(15,23,42,.18)'};
-    if(spec.h)st.h=spec.h;
+    var s=nextSlot(d,spec.w,spec.h||900),st={w:spec.w,bg:spec.bg||'#ffffff',overflow:'hidden',radius:spec.radius==null?30:spec.radius,justify:spec.justify||'flex-start',shadow:'0 24px 60px rgba(15,23,42,.18)'};
+    if(spec.h){if(spec.layout==='free')st.h=spec.h;else st.minH=spec.h;}
     var root=build(F(st,spec.children||[],spec.name));
     root.props.screen=spec.kind==='screen';root.props.page=spec.kind==='page';root.props.layout=spec.layout;root.props.device=spec.device||'';
     Object.assign(root.style,{pos:'absolute',x:s.x,y:s.y});
     try{appendBlocks([root]);}catch(e){console.error(e);return null;}
-    d=getDoc();d.canvas.width=Math.max(Number(d.canvas.width)||0,s.x+spec.w+120,1440);d.canvas.minHeight=Math.max(Number(d.canvas.minHeight)||0,s.y+(spec.h||900)+120);delete d.canvas.deviceH;
+    d=getDoc();/* keep the new board inside the artboard: widen only if it cannot fit, grow height only to contain it, never touch what the user already set */
+    d.canvas.width=Math.max(Number(d.canvas.width)||0,s.x+spec.w+80);
+    d.canvas.minHeight=Math.max(Number(d.canvas.minHeight)||0,s.y+(spec.h||900)+80);
     stateRef.selection=new Set([root.id]);
     try{bus.emit('doc');bus.emit('selection');}catch(e){}
-    requestAnimationFrame(function(){try{if(M['layout/coords'+'.js'].applyTransform)M['layout/coords.js'].applyTransform();bus.emit('command','view.fit');bus.emit('view');}catch(e){}});
+    requestAnimationFrame(function(){try{if(M['layout/coords'+'.js'].applyTransform)M['layout/coords.js'].applyTransform();bus.emit('view');}catch(e){}});
     return root;
   }
   function newScreen(dev){return addFrame({kind:'screen',name:dev[0],w:dev[1],h:dev[2],layout:'free',device:dev[0]});}
@@ -28197,12 +28420,12 @@ try{
       return;}
     var dv=e.target.closest('[data-d]');if(dv){curDev=DEV[+dv.dataset.d];newScreen(curDev);return;}
     var kt=e.target.closest('[data-k]');if(kt){insertKit(+kt.dataset.k);return;}
-    var bk=e.target.closest('[data-bt]');if(bk){try{ops.addBlock(bk.dataset.bt);}catch(x){}return;}
-    var th=e.target.closest('.th,.ic');if(th){var c=centre();place(resolve(th.dataset.id),c[0],c[1]);}
+    var bk=e.target.closest('[data-bt]');if(bk){try{if(window.__vbm_addAtSel)window.__vbm_addAtSel(bk.dataset.bt);else if(!(window.__vbDup&&window.__vbDup('add:'+bk.dataset.bt)))ops.addBlock(bk.dataset.bt);}catch(x){}return;}
+    var th=e.target.closest('.th,.ic');if(th){if(Date.now()-(window.__vbDragAt||0)<900)return;var c=centre();place(resolve(th.dataset.id),c[0],c[1]);}
   });
   P.addEventListener('dragstart',function(e){
     var bk=e.target.closest&&e.target.closest('.bk');if(bk){e.dataTransfer.setData('text/vb-type',bk.dataset.bt);e.dataTransfer.effectAllowed='copy';return;}
-    var th=e.target.closest&&e.target.closest('.th,.ic');if(!th)return;e.dataTransfer.setData('text/vb-asset',th.dataset.id);e.dataTransfer.effectAllowed='copy';
+    var th=e.target.closest&&e.target.closest('.th,.ic');if(!th)return;window.__vbDragAt=Date.now();e.dataTransfer.setData('text/vb-asset',th.dataset.id);e.dataTransfer.effectAllowed='copy';
   });
   P.addEventListener('dragover',function(e){var z=e.target.closest&&e.target.closest('#vbm-dz');if(z){e.preventDefault();z.classList.add('over');}});
   P.addEventListener('dragleave',function(e){var z=e.target.closest&&e.target.closest('#vbm-dz');if(z)z.classList.remove('over');});
@@ -28213,7 +28436,7 @@ try{
   vp.addEventListener('dragover',function(e){var t=e.dataTransfer&&e.dataTransfer.types?[].slice.call(e.dataTransfer.types):[];if(t.indexOf('text/vb-asset')>-1||t.indexOf('Files')>-1){e.preventDefault();e.dataTransfer.dropEffect='copy';}},true);
   vp.addEventListener('drop',function(e){
     var dt=e.dataTransfer;if(!dt)return;var id=dt.getData('text/vb-asset');
-    if(id){e.preventDefault();e.stopImmediatePropagation();place(resolve(id),e.clientX,e.clientY);return;}
+    if(id){window.__vbDragAt=Date.now();e.preventDefault();e.stopImmediatePropagation();place(resolve(id),e.clientX,e.clientY);return;}
     if(dt.files&&dt.files.length&&/^image\//.test(dt.files[0].type)){e.preventDefault();e.stopImmediatePropagation();var x=e.clientX,y=e.clientY;addFiles(dt.files,function(a,i){place(a,x+i*24,y+i*24);});}
   },true);
 
@@ -28223,14 +28446,13 @@ try{
   b.onclick=function(){P.classList.toggle('on');if(P.classList.contains('on')){pos();draw();}};
   if(k)k.before(b);else if(bar)bar.appendChild(b);
   window.addEventListener('resize',function(){if(P.classList.contains('on'))pos();});
+  window.__vbmTest={newScreen:newScreen,newPage:newPage,insertKit:insertKit,kits:KITS,devs:function(){return typeof curDev!=='undefined'?curDev:null;}};
   window.vbmAssets=function(){b.onclick();};
   window.vbmRedraw=function(){if(P.classList.contains('on'))draw();};
   window.vbmOpenTab=function(t){tab=t;localStorage.setItem('vbm-tab',t);if(!P.classList.contains('on')){P.classList.add('on');pos();}draw();};
 }catch(err){console.error('[vbm-assets]',err);window.__vbmErr=(err&&err.message)||String(err);}
 })();
-</script>
-
-<script id="vbm-js5">
+/* ---- vbm-js5 ---- */
 (function(){
   var d=document.createElement('div');d.id='vbm-dock';
   var f=document.createElement('button');f.id='vbm-fab';f.type='button';f.title='Assets: blocks, images, icons, screens, kits (Ctrl+J)';
@@ -28252,8 +28474,7 @@ try{
     try{d.classList.toggle('has-sel',window.__m['core/store.js'].state.selection.size>0);}catch(e){}
   },150);
 })();
-</script>
-<script id="vbm-js6">
+/* ---- vbm-js6 ---- */
 (function(){try{
   var M=window.__m;if(!M)return;
   var ops=M['model/ops.js'],bus=M['core/bus.js'],state=M['core/store.js'].state,co=M['layout/coords.js'];
@@ -28292,8 +28513,11 @@ try{
         if(st._flowH!=null){if(st._flowH==='')delete st.h;else st.h=st._flowH;delete st._flowH;}
       }
     });
+    if(to==='free'){b.style.h=Math.round(fr.height/z);delete b.style.minH;}
+    else{if(b.style.h!=null&&b.style.h!==''){b.style.minH=b.style.h;delete b.style.h;}}
     b.props.layout=to;if(dirty)dirty();if(commit)commit();try{bus.emit('doc');}catch(e){}
   }
+  window.__vbmSetLayout=function(id,to){var d=getDoc();function fb(l){for(var j=0;j<(l||[]).length;j++){if(l[j].id===id)return l[j];var r=fb(l[j].children);if(r)return r;}return null;}var b=fb(d.children);if(b)setLayout(b,to);return !!b;};
   var slug=function(t){return String(t||'screen').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'screen';};
   function exportFrame(b){
     var d=getDoc(),to=fnAny('blocksToHtml'),dl=fnAny('download');if(!dl)return;
@@ -28310,7 +28534,7 @@ try{
     else if(a==='dup'){
       try{ops.duplicateBlocks([o.b.id]);var id=Array.from(state.selection)[0],nb=fb(getDoc().children,id);
         if(nb&&nb.id!==o.b.id){nb.style.x=(Number(o.b.style.x)||0)+(Number(o.b.style.w)||0)+80;nb.style.y=Number(o.b.style.y)||0;nb.name=(o.b.name||'Screen')+' copy';
-          var d=getDoc();d.canvas.width=Math.max(Number(d.canvas.width)||0,nb.style.x+(Number(nb.style.w)||0)+120);bus.emit('doc');}}catch(x){}
+          bus.emit('doc');}}catch(x){}
     }
   });
   function tick(){
@@ -28396,9 +28620,7 @@ try{
   document.addEventListener('click',function(e){var t=e.target.closest&&e.target.closest('#tbExport');if(!t||bypass||window.vbmBypass)return;if(frames().length){e.preventDefault();e.stopImmediatePropagation();showExport();}},true);
   document.addEventListener('keydown',function(e){if(e.key==='Escape')X.classList.remove('on');},true);
 }catch(err){console.error('[vbm-v6]',err);window.__vbmErr6=(err&&err.message)||String(err);}})();
-</script>
-
-<script id="vbm-js7">
+/* ---- vbm-js7 ---- */
 (function(){try{
   var P=document.getElementById('vbm-as');if(!P)return;
   var KEY='vbm-as-geo',g=null;
@@ -28443,9 +28665,7 @@ try{
   P.addEventListener('click',function(e){if(e.target.closest&&e.target.closest('.tabs .x'))P.classList.remove('on');});
   P.addEventListener('dblclick',function(e){if(e.target.closest&&e.target.closest('.tabs')&&!e.target.closest('button')){g=null;try{localStorage.removeItem(KEY);}catch(x){}clamp();}});
 }catch(err){console.error('[vbm-v7]',err);}})();
-</script>
-
-<script id="vbm-js8">
+/* ---- vbm-js8 ---- */
 function vbmMakeShapes(def, Cat) {
   var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');};
   var hash=function(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h).toString(36);};
@@ -28472,7 +28692,17 @@ function vbmMakeShapes(def, Cat) {
   var base={fill:'#6366f1',fill2:'',angle:45,stroke:'#312e81',strokeW:0};
   var mk=function(o){return Object.assign({},base,o);};
   function D(type,label,keywords,props,style,fields,render){
-    def({type:type,cat:Cat,label:label,icon:'image',tag:'div',container:false,keywords:keywords,defaults:{props:props,style:style},fields:fields,render:render});
+    var own=[],fillF=[],strokeF=[];
+    fields.forEach(function(f){(f.k==='fill'||f.k==='fill2'||f.k==='angle'?fillF:f.k==='stroke'||f.k==='strokeW'?strokeF:own).push(f);});
+    var effF=[{k:'opacity',l:'Opacity (0-1)',t:'number'}];
+    if(props.opacity==null)props=Object.assign({opacity:1},props);
+    var groups=[];
+    if(own.length)groups.push({title:label+' shape',key:'shape-'+type,fields:own});
+    if(fillF.length)groups.push({title:'Fill',key:'fill-'+type,fields:fillF});
+    if(strokeF.length)groups.push({title:'Stroke',key:'stroke-'+type,fields:strokeF});
+    groups.push({title:'Effects',key:'fx-'+type,fields:effF});
+    var wrapped=function(p,st,b){var h=render(p,st,b),o=Number(p.opacity);if(isFinite(o)&&p.opacity!==''&&o>=0&&o<1)h=h.replace('style="display:block;overflow:visible"','style="display:block;overflow:visible;opacity:'+o+'"');return h;};
+    def({type:type,cat:Cat,label:label,icon:'image',tag:'div',container:false,keywords:keywords,defaults:{props:props,style:style},groups:groups,fields:[],render:wrapped});
   }
   D('rectangle','Rectangle','shape box square rounded',mk({radius:12}),{w:160,h:160},[{k:'radius',l:'Corner radius',t:'number'}].concat(FILL),
     function(p){return svg(p,false,function(f){return '<rect width="100%" height="100%" rx="'+(Number(p.radius)||0)+'" fill="'+f+'"'+stk(p)+'/>';});});
@@ -28644,8 +28874,7 @@ function vbmMakeShapes(def, Cat) {
       sizes[f.id]={w:W,h:H||sizes[f.id].h};});
   },150);
 }catch(err){console.error('[vbm-v8]',err);window.__vbmErr8=(err&&err.message)||String(err);}})();
-</script>
-<script id="vbm-js9">
+/* ---- vbm-js9 ---- */
 function vbmDiffNode(a,b,path,out){
   ['props','style'].forEach(function(sec){var A=a[sec]||{},B=b[sec]||{};
     Object.keys(A).forEach(function(k){if(k.charAt(0)==='_')return;
@@ -28801,8 +29030,7 @@ function vbmApplyNode(n,path,ov){
   },500);
   redraw();
 }catch(err){console.error('[vbm-v9]',err);window.__vbmErr9=(err&&err.message)||String(err);}})();
-</script>
-<script id="vbm-js10">
+/* ---- vbm-js10 ---- */
 (function(){
   var M=window.__m;if(!M)return;
   var store=M['core/store.js'],bus=M['core/bus.js'],state=store.state,co=M['layout/coords.js'],project=M['io/project.js'];
@@ -29090,6 +29318,28 @@ function vbmApplyNode(n,path,ov){
     if(b.dataset.pr&&window.vbmPresent)window.vbmPresent();else if(b.dataset.ui&&window.vbmToggle)window.vbmToggle(b.dataset.ui);else if(b.dataset.his&&window.vbmOpenTab)window.vbmOpenTab('his');});
   var ts=$('#toolstrip');if(ts)new MutationObserver(addBtns).observe(ts,{childList:true});addBtns();
 }catch(err){console.error('[vbm-history]',err);window.__vbmErr10d=err&&err.message;}})();
+</script>
+
+
+
+
+
+<style id="vbm-canvas-reset">#canvas,#canvas .vbpage{letter-spacing:normal;font-feature-settings:normal}</style>
+<style id="vbm-nodrag">#canvas img,#canvas svg,#canvas video,#canvas a{-webkit-user-drag:none;user-drag:none}#canvas img{-webkit-user-select:none;user-select:none}</style>
+<script id="vbm-nodrag-js">
+/* A canvas <img>/<svg>/<a> is natively draggable: the browser starts its own drag
+   with a ghost copy that sticks to the mouse after release. Moving blocks is done by
+   the editor's own pointer logic, so the native drag must never start on the canvas. */
+(function(){
+  document.addEventListener('dragstart',function(e){
+    var t=e.target;if(!(t&&t.closest))return;
+    if(t.closest('#canvas')){e.preventDefault();}
+  },true);
+  function fix(){var c=document.getElementById('canvas');if(!c)return;
+    c.querySelectorAll('img:not([data-nd]),a:not([data-nd])').forEach(function(n){n.setAttribute('draggable','false');n.setAttribute('data-nd','1');});}
+  new MutationObserver(function(){fix();}).observe(document.documentElement,{childList:true,subtree:true});
+  fix();
+})();
 </script>
 </body>
 </html>
